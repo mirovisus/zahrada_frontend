@@ -1,0 +1,43 @@
+.role-selector {
+  display: flex;
+  gap: 20px;
+  min-width: 360px;
+  width: 100%;
+
+  @include mobile {
+    gap: 14px;
+    min-width: 280px;
+    width: 100%;
+  }
+
+  &__item {
+    flex: 1;
+    cursor: pointer;
+  }
+
+  &__btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: var(--input-height);
+    width: 100%;
+
+    border: 1px solid var(--color-lightgray);
+    border-radius: var(--border-radius-small);
+    background-color: transparent;
+    color: var(--color-light);
+    transition: all 0.3s ease;
+  }
+
+  &__btn:hover {
+    background-color: color-mix(in srgb, var(--color-accent), transparent 50%);
+    border-color: color-mix(in srgb, var(--color-accent), transparent 50%);
+  }
+
+  &__input:checked + &__btn {
+    background-color: var(--color-light);
+    color: var(--color-dark-alt);
+    font-weight: 500;
+    border-color: var(--color-light);
+  }
+}

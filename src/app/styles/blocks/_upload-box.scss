@@ -1,0 +1,34 @@
+.upload-box {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  position: relative;
+
+  &__label {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 36px;
+    overflow: hidden;
+    position: relative;
+    border: var(--border-dashed);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    color: var(--color-lightgray);
+  }
+
+  &__preview {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--border-radius);
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 5;
+    background-color: var(--color-light);
+  }
+}

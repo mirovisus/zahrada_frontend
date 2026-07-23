@@ -1,0 +1,129 @@
+.hero {
+  display: flex;
+  flex-direction: row;
+  row-gap: var(--section-padding-y);
+
+  &__main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    column-gap: 60px;
+
+    @include mobile {
+      flex-direction: column;
+      gap: 0;
+      align-items: center;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    max-width: 557px;
+
+    @include fluid-text(18, 12);
+
+    @include mobile {
+      display: contents;
+      flex-direction: column;
+    }
+  }
+
+  &__title {
+    @include mobile {
+      order: -3;
+    }
+  }
+
+  &__description{
+    margin-top: 14px;
+
+    @include mobile {
+      order: -2;
+    }
+  }
+
+  &__button {
+    margin-top: 42px;
+
+    @include mobile {
+      width: 100%;
+      max-width: 390px;
+      margin-inline: auto;
+      margin-top: 60px;
+    }
+  }
+
+  &__media {
+    position: relative;
+
+    &-image {
+      border-radius: var(--border-radius-small);
+    }
+
+    @include mobile {
+      order: -1;
+      align-self: end;
+      width: 70%;
+      margin: 30px 0;
+    }
+
+    @include mobile-s {
+      width: 100%;
+    }
+  }
+
+  &__card {
+    position: absolute;
+    z-index: 100;
+
+    width: 228px;
+    left: -20%;
+    bottom: -10%;
+
+    &-content {
+      position: relative;
+
+      display: block;
+      gap: 0;
+    }
+
+    .card__title{
+      color: var(--color-light);
+
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+
+      white-space: nowrap;
+      hyphens: none;
+
+      @media (max-width: 870px) {
+        font-size: 12px;
+        bottom: 9px;
+      }
+    }
+
+    .card__description{
+      @media (max-width: 870px) {
+        font-size: 11px;
+      }
+    }
+
+    @media (max-width: 1080px) {
+      width: 180px;
+    }
+
+    @media (max-width: 870px) {
+      width: 140px;
+    }
+
+    @include mobile-s {
+      width: 180px;
+      left: 0;
+      transform: none;
+    }
+  }
+}

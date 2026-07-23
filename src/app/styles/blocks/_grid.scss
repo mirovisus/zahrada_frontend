@@ -1,0 +1,38 @@
+.grid {
+  --gridColumns: 1;
+
+  display: grid;
+  grid-template-columns: repeat(var(--gridColumns), 1fr);
+  gap: 18px;
+
+  @include mobile {
+    gap: 12px;
+  }
+
+  //generuje tridy .grid--2 az .grid--12
+  @for $i from 2 through 12 {
+    &--#{$i} {
+      --gridColumns: #{$i};
+    }
+  }
+
+  &--3 {
+    @include tablet {
+      --gridColumns: 2;
+    }
+
+    @include mobile {
+      --gridColumns: 1;
+    }
+  }
+
+  &--4 {
+    @include tablet {
+      --gridColumns: 3;
+    }
+
+    @include mobile {
+      --gridColumns: 1;
+    }
+  }
+}

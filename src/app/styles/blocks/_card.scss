@@ -1,0 +1,38 @@
+.card {
+  --card-padding: 12px;
+
+  background-color: var(--color-light);
+  border-radius: var(--border-radius);
+
+  padding: var(--card-padding);
+  padding-bottom: calc(var(--card-padding) * 2);
+  box-shadow: var(--shadow-box);
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__image {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: calc(var(--border-radius) - var(--card-padding));
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &-hero{
+    @media (max-width: 870px){
+      --card-padding: 8px;
+      gap: 10px;
+    }
+
+    @include mobile {
+      text-align: center;
+    }
+  }
+}

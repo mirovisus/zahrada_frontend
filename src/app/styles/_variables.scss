@@ -1,0 +1,43 @@
+// Globální proměnné projektu
+:root {
+  --color-dark: #14140F;
+  --color-dark-alt: #374132;
+  --color-light: #FFFFFF;
+  --color-accent: #87AF73;
+  --color-attention: #ec784e;
+  --color-gray: #404040;
+  --color-gray-alt: #212121;
+  --color-lightgray: #BBB;
+  --color-green: #D6E5BE; //originally #D6E5BE
+  --bg-color: #f5f5f5;
+
+  --border: 1px solid var(--color-lightgray);
+  --border-dashed: 2px dashed var(--color-lightgray);
+  --border-radius: 24px;
+  --border-radius-small: 18px;
+  --border-radius-large: 30px;
+
+  --shadow-box: 0 10px 30px -20px var(--color-dark-alt);
+  --shadow-box-light: 0 10px 30px -20px var(--color-lightgray);
+
+  --font-family-base: 'Poppins', sans-serif;
+  --font-family-primary: 'Montserrat', sans-serif;
+
+  --container-width: 1200px;
+  --container-padding-x: 20px; //pro mobil
+
+  --section-padding-y: 48px;
+
+  --input-height: 54px;
+  --button-height: 54px;
+
+  --transition-duration: 0.2s;
+
+  @include desktop {
+    --section-padding-y: 50px;
+  }
+
+  @include mobile {
+    --section-padding-y: 30px;
+  }
+}

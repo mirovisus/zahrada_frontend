@@ -1,0 +1,15 @@
+.info-banner {
+  background: var(--color-green);
+  background: radial-gradient(circle,
+              rgba(219, 232, 214, 1) 0%,
+              rgba(171, 200, 158, 1) 77%,
+              rgba(158, 194, 140, 1) 100%);
+  border-radius: var(--border-radius);
+  padding: 30px;
+  color: var(--color-dark-alt);
+  box-shadow: var(--shadow-box-light);
+
+  @include mobile {
+    padding: 18px;
+  }
+}

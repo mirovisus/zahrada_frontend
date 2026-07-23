@@ -1,0 +1,14 @@
+.gardens {
+  background-color: var(--color-light);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-box-light);
+  padding: 30px;
+
+  @include mobile {
+    padding: 18px;
+  }
+
+  &__title {
+    margin-bottom: 30px;
+  }
+}

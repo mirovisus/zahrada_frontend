@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -rn \"const.*=.*\\\\[\\\\s*$\\\\|const.*=.*\\\\[{\" --include=\"*.jsx\" .)",
+      "Bash(curl -sf http://localhost:5174)"
+    ]
+  }
+}

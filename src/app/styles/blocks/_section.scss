@@ -1,0 +1,47 @@
+.section {
+  padding-block: var(--section-padding-y);
+
+  @include mobile {
+    text-align: center;
+  }
+
+  &__title {
+    margin-bottom: 36px;
+
+    @include mobile {
+      margin-bottom: 18px;
+    }
+  }
+
+  &--banner {
+    background-color: var(--color-green);
+    color: var(--color-dark-alt);
+
+    margin-top: 48px;
+    padding-block: 60px;
+
+    @include mobile {
+      margin-top: 0;
+      padding-block: 36px;
+    }
+
+    @include mobile-s {
+      padding-block: 24px;
+    }
+  }
+
+  &--login {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-image: url('/images/login-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    margin: 0;
+    max-width: 100%;
+  }
+}

@@ -1,0 +1,48 @@
+.feature-card {
+  --featuresPudding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  row-gap: var(--featuresPudding);
+  padding: var(--featuresPudding);
+  height: 100%;
+  background-color: var(--color-light);
+  border-radius: var(--border-radius-large);
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-box-light);
+
+  @include mobile {
+    --featuresPudding: 12px;
+    height: 216px;
+  }
+
+  &--first {
+    @include mobile {
+      height: 560px;
+    }
+  }
+
+  &__body {
+    @include mobile {
+      flex-grow: 1;
+      width: 100%;
+      overflow: hidden;
+    }
+  }
+
+  &__image {
+    border-radius: calc(var(--border-radius-large) - var(--featuresPudding));
+    width: 100%;
+    object-fit: cover;
+
+    @include mobile {
+      height: 100%;
+    }
+  }
+
+  &:hover {
+    border: 1px solid var(--color-accent);
+  }
+}

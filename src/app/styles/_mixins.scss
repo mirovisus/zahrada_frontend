@@ -1,0 +1,50 @@
+// mixiny pro použití v jakémkoli souboru projektu
+// zjednoduší výpočty pro dynamickou velikost písma
+@use 'sass:math';
+
+@mixin fluid-text($max: 48, $min: 16) {
+  font-size: clamp(#{$min}px, #{math.div($max, 1440) * 100}vw, #{$max}px);
+}
+
+// resetuje některé vlastnosti typické pro prvky odkazu
+@mixin reset-link {
+  color: inherit; // aby se barva textu odkazu dědila z rodičovského prvku
+
+  &,
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+// resetuje výchozí styly tlačítka
+@mixin reset-button {
+  padding: 0;
+  background-color: transparent;
+  border: none;
+}
+
+// Centruje obsah prvku pomocí Flexboxu
+@mixin flex-center($isInline: false) {
+  @if $isInline {
+    display: inline-flex;
+  } @else {
+    display: flex;
+  }
+
+  justify-content: center;
+  align-items: center;
+}
+
+//Centruje prvek s absolutním pozicováním vzhledem k rodičovskému prvku
+@mixin abs-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+}
+
+// nastavuje rozměry s proporcemi 1:1
+@mixin square($size) {
+  width: $size;
+  aspect-ratio: 1;
+}

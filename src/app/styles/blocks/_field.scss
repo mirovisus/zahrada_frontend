@@ -1,0 +1,87 @@
+.field {
+  --fieldInputHeight: var(--input-height);
+  --fieldInputTextColor: var(--color-lightgray);
+  --fieldInputBgColor: var(--color-light);
+  --fieldInputBorderColor: var(--color-lightgray);
+  --fieldInputPlaceholderColor: var(--color-lightgray);
+  --fieldInputHoverBgColor: var(--color-green);
+
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  width: 100%;
+  row-gap: 5px;
+
+  @include mobile {
+    row-gap: 10px;
+  }
+
+  &--big-height {
+    --fieldInputHeight: var(--button-height);
+  }
+
+  &--dark-bg {
+    --fieldInputTextColor: var(--color-accent);
+    --fieldInputBgColor: var(--color-gray-alt);
+    --fieldInputBorderColor: var(--color-lightgray);
+    --fieldInputPlaceholderColor: var(--color-light);
+    --fieldInputHoverBgColor: var(--color-dark);
+  }
+
+  &--transparent {
+    --fieldInputTextColor: var(--color-light);
+    --fieldInputBgColor: color-mix(in srgb, var(--color-light), transparent 95%);
+    --fieldInputBorderColor: var(--color-lightgray);
+    --fieldInputPlaceholderColor: var(--color-light);
+    --fieldInputHoverBgColor: color-mix(in srgb, var(--color-darkt), transparent 20%);
+  }
+
+  &__label {
+    @include fluid-text(16, 14);
+  }
+
+  &__input {
+    width: 100%;
+    height: var(--fieldInputHeight);
+    padding-inline: 30px;
+    color: var(--fieldInputTextColor);
+    background-color: var(--fieldInputBgColor);
+    border: 1px solid var(--fieldInputBorderColor);
+    border-radius: var(--border-radius-small);
+    transition: all 0.3s ease;
+
+    @include hover {
+      background-color: var(--fieldInputHoverBgColor);
+    }
+
+    @include mobile {
+      padding-inline: 20px;
+    }
+
+    &:focus {
+      border-color: var(--color-dark-alt);
+      color: var(--color-dark);
+      background-color: var(--color-light);
+      outline: none;
+    }
+
+    &::placeholder {
+      color: var(--fieldInputPlaceholderColor);
+    }
+
+    &--textarea {
+      height: 190px;
+      padding-block: 18px;
+      resize: none;
+
+      @include mobile {
+        height: 132px;
+      }
+    }
+  }
+
+  &__error {
+    color: var(--color-attention);
+    font-size: 13px;
+  }
+}

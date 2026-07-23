@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="./styles/styles.css" />
+    <title>Profil</title>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header__inner container">
+        <div class="header__spacer"></div>
+
+        <a class="header__logo logo" href="/">
+          <img
+            src="./images/logo.svg"
+            alt="Zahrada"
+            width="99"
+            height="21"
+            loading="lazy"
+        /></a>
+
+        <div class="header__actions hidden-mobile">
+          <ul class="header__menu-list">
+            <li class="header__menu-item">
+              <a
+                class="header__button button button--transparent"
+                href="signup.html"
+              >
+                Odhlásit se
+              </a>
+            </li>
+          </ul>
+        </div>
+        <button class="icon-button visible-mobile" type="button">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M16 17L21 12M21 12L16 7M21 12H9M12 17C12 17.93 12 18.395 11.8978 18.7765C11.6204 19.8117 10.8117 20.6204 9.77646 20.8978C9.39496 21 8.92997 21 8 21H7.5C6.10218 21 5.40326 21 4.85195 20.7716C4.11687 20.4672 3.53284 19.8831 3.22836 19.1481C3 18.5967 3 17.8978 3 16.5V7.5C3 6.10217 3 5.40326 3.22836 4.85195C3.53284 4.11687 4.11687 3.53284 4.85195 3.22836C5.40326 3 6.10218 3 7.5 3H8C8.92997 3 9.39496 3 9.77646 3.10222C10.8117 3.37962 11.6204 4.18827 11.8978 5.22354C12 5.60504 12 6.07003 12 7"
+              stroke="black"
+              stroke-width="1.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span class="visually-hidden">Odhlásit se</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="split-layout container">
+      <aside class="split-layout__sidebar">
+        <div class="profile-card">
+          <div class="profile-card__header">
+            <img
+              class="profile-card__avatar"
+              src="./images/profile/profil-man.jpg"
+              alt="person"
+              width="72"
+              height="72"
+              loading="lazy"
+            />
+
+            <div class="profile-card__info">
+              <p class="profile-card__name h4">John</p>
+              <p class="profile-card__role">Vlastník zahrady</p>
+            </div>
+          </div>
+
+          <form class="profile-card__form" action="#" method="post">
+            <div
+              class="profile-card__field profile-card__field--bio field is-worker"
+            >
+              <label for="profile-bio" class="field__label visually-hidden"
+                >O sobě</label
+              >
+              <textarea
+                class="field__input profile-card__bio"
+                id="profile-bio"
+                name="bio"
+                placeholder="Napište pár slov o své praxi. Pomůže to zákazníkům vás lépe poznat."
+              ></textarea>
+            </div>
+
+            <div class="profile-card__field field">
+              <label
+                for="profile-first-name"
+                class="field__label visually-hidden"
+                >Jméno</label
+              >
+              <input
+                class="field__input"
+                id="profile-first-name"
+                name="firstName"
+                value="John"
+                placeholder="Jméno"
+                type="text"
+              />
+            </div>
+
+            <div class="profile-card__field field">
+              <label
+                for="profile-last-name"
+                class="field__label visually-hidden"
+                >Příjmení</label
+              >
+              <input
+                class="field__input"
+                id="profile-last-name"
+                name="lastName"
+                value="Doe"
+                placeholder="Příjmení"
+                type="text"
+              />
+            </div>
+
+            <hr class="divider" />
+
+            <div class="profile-card__field field">
+              <label for="profile-email" class="field__label visually-hidden"
+                >E-mail</label
+              >
+              <input
+                class="field__input"
+                id="profile-email"
+                name="email"
+                value="john@gmail.com"
+                placeholder="Email"
+                type="email"
+              />
+            </div>
+
+            <div class="profile-card__field field">
+              <label for="profile-phone" class="field__label visually-hidden"
+                >Telefonní číslo</label
+              >
+              <input
+                class="field__input"
+                id="profile-phone"
+                name="phoneNumber"
+                value="+420"
+                placeholder="+420XXXXXXXXX"
+                type="tel"
+              />
+            </div>
+
+            <div class="profile-card__field field">
+              <label for="profile-password" class="field__label visually-hidden"
+                >Nové heslo</label
+              >
+              <input
+                class="field__input"
+                id="profile-password"
+                name="newPassword"
+                placeholder="Nové heslo"
+                type="password"
+                autocomplete="new-password"
+              />
+            </div>
+
+            <div class="profile-card__actions">
+              <button class="button" type="submit">Uložit</button>
+
+              <button class="button button--delete" type="button">
+                Smazat účet
+              </button>
+            </div>
+          </form>
+        </div>
+      </aside>
+
+      <main class="split-layout__content">
+        <section class="info-banner">
+          <h1 class="info-banner__title h2">Ahoj, john!</h1>
+          <p class="info-banner__text">
+            Vše je aktuální, <strong>žádné nové zprávy</strong>
+          </p>
+        </section>
+
+        <section class="gardens">
+          <h2 class="gardens__title h3">Moje zahrady:</h2>
+          <ul class="gardens__list grid grid--3">
+            <li class="gardens__item">
+              <article class="garden-card">
+                <img
+                  class="garden-card__image"
+                  src="./images/profile/garden-1.png"
+                  alt="Vegetable Garden"
+                  loading="lazy"
+                />
+                <div class="garden-card__overlay">
+                  <h3 class="garden-card__title h4">Vegetable Garden</h3>
+                  <div>
+                    <p class="garden-card__street">Lomena 1314</p>
+                    <p class="garden-card__city">Pardubice</p>
+                  </div>
+                </div>
+              </article>
+            </li>
+
+            <li class="gardens__item">
+              <article class="garden-card">
+                <img
+                  class="garden-card__image"
+                  src="./images/profile/garden-2.png"
+                  alt="Zelený ráj"
+                  loading="lazy"
+                />
+                <div class="garden-card__overlay">
+                  <h4 class="garden-card__title">Zelený ráj</h4>
+                  <p class="garden-card__address">
+                    Jabloňová 27 1156, Hradec Králové
+                  </p>
+                </div>
+              </article>
+            </li>
+
+            <li class="gardens__item">
+              <a href="garden.html" class="garden-card garden-card--add">
+                <div class="garden-card__add-inner">
+                  <div class="garden-card__spacer"></div>
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <line
+                      x1="12"
+                      y1="5"
+                      x2="12"
+                      y2="19"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
+                    <line
+                      x1="5"
+                      y1="12"
+                      x2="19"
+                      y2="12"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  <p class="garden-card__add-text">Vytvořit novou zahradu</p>
+                </div>
+              </a>
+            </li>
+          </ul>
+
+          <div class="demand-list demand-list--embedded">
+            <header class="demand-list__header">
+              <h3 class="demand-list__title h3">Seznam poptávek</h3>
+
+              <!-- ZÁKAZNÍK -->
+              <!-- <nav class="demand-list__filters" aria-label="Filtr stavu poptávek">
+                <button class="chip chip--active" type="button" data-filter="all">Vše</button>
+                <button class="chip" type="button" data-filter="schvalena">Schválena</button>
+                <button class="chip" type="button" data-filter="ceka-na-platbu">Čeká na platbu</button>
+                <button class="chip" type="button" data-filter="zaplaceno">Zaplaceno</button>
+                <button class="chip" type="button" data-filter="dokonceno">Dokončeno</button>
+              </nav> -->
+
+              <!-- VLASTNÍK  -->
+              <nav
+                class="demand-list__filters"
+                aria-label="Filtr stavu poptávek"
+              >
+                <button
+                  class="chip chip--active"
+                  type="button"
+                  data-filter="all"
+                >
+                  Vše
+                </button>
+                <button class="chip" type="button" data-filter="nova">
+                  Nová
+                </button>
+                <button class="chip" type="button" data-filter="schvalena">
+                  Schválena
+                </button>
+                <button class="chip" type="button" data-filter="ceka-na-platbu">
+                  Čeká na platbu
+                </button>
+                <button class="chip" type="button" data-filter="zaplaceno">
+                  Zaplaceno
+                </button>
+                <button class="chip" type="button" data-filter="dokonceno">
+                  Dokončeno
+                </button>
+                <button class="chip" type="button" data-filter="zruseno">
+                  Zrušeno
+                </button>
+              </nav>
+            </header>
+
+            <ul class="demand-list__items">
+              <li class="demand-list__item">
+                <article class="demand-card" data-status="ceka-na-platbu">
+                  <div class="demand-card__body">
+                    <div class="demand-card__header">
+                      <div class="demand-card__header-left">
+                        <h4 class="demand-card__title h4">Sekání trávníku</h4>
+                        <span class="chip chip--status chip--ceka-na-platbu"
+                          >Čeká na platbu</span
+                        >
+                      </div>
+
+                      <svg
+                        class="demand-card__icon"
+                        width="21"
+                        height="20"
+                        viewBox="0 0 21 20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M0.75 13.6956C0.0325611 14.1098 -0.213252 15.0272 0.200962 15.7446C0.615175 16.4621 1.53256 16.7079 2.25 16.2937L0.75 13.6956ZM20.2694 5.38286C20.4838 4.58266 20.0089 3.76015 19.2087 3.54574L6.16874 0.051683C5.36854 -0.16273 4.54603 0.312144 4.33162 1.11234C4.11721 1.91254 4.59208 2.73505 5.39228 2.94946L16.9834 6.05529L13.8776 17.6464C13.6631 18.4466 14.138 19.2691 14.9382 19.4835C15.7384 19.6979 16.5609 19.2231 16.7753 18.4229L20.2694 5.38286ZM2.25 16.2937L19.5705 6.29367L18.0705 3.69559L0.75 13.6956L2.25 16.2937Z"
+                          fill="#B9FF66"
+                        />
+                      </svg>
+                    </div>
+
+                    <div class="demand-card__services">
+                      <span class="chip chip--secondary">Sekání trávníku</span>
+                      <span class="chip chip--secondary">Údržba záhonů</span>
+                    </div>
+
+                    <p class="demand-card__preview">
+                      Potřebuji posekat velký trávník před domem, cca 200 m²...
+                    </p>
+
+                    <div class="demand-card__meta">
+                      <span class="demand-card__meta-item">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+                            fill="currentColor"
+                          />
+                        </svg>
+                        Zahrada: Lomena 1314, Pardubice
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              </li>
+
+              <li class="demand-list__item">
+                <article class="demand-card" data-status="ceka-na-platbu">
+                  <div class="demand-card__body">
+                    <div class="demand-card__header">
+                      <div class="demand-card__header-left">
+                        <h4 class="demand-card__title h4">Sekání trávníku</h4>
+                        <span class="chip chip--status chip--ceka-na-platbu"
+                          >Čeká na platbu</span
+                        >
+                      </div>
+
+                      <svg
+                        class="demand-card__icon"
+                        width="21"
+                        height="20"
+                        viewBox="0 0 21 20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M0.75 13.6956C0.0325611 14.1098 -0.213252 15.0272 0.200962 15.7446C0.615175 16.4621 1.53256 16.7079 2.25 16.2937L0.75 13.6956ZM20.2694 5.38286C20.4838 4.58266 20.0089 3.76015 19.2087 3.54574L6.16874 0.051683C5.36854 -0.16273 4.54603 0.312144 4.33162 1.11234C4.11721 1.91254 4.59208 2.73505 5.39228 2.94946L16.9834 6.05529L13.8776 17.6464C13.6631 18.4466 14.138 19.2691 14.9382 19.4835C15.7384 19.6979 16.5609 19.2231 16.7753 18.4229L20.2694 5.38286ZM2.25 16.2937L19.5705 6.29367L18.0705 3.69559L0.75 13.6956L2.25 16.2937Z"
+                          fill="#B9FF66"
+                        />
+                      </svg>
+                    </div>
+
+                    <div class="demand-card__services">
+                      <span class="chip chip--secondary">Sekání trávníku</span>
+                      <span class="chip chip--secondary">Údržba záhonů</span>
+                    </div>
+
+                    <p class="demand-card__preview">
+                      Potřebuji posekat velký trávník před domem, cca 200 m²...
+                    </p>
+
+                    <div class="demand-card__meta">
+                      <span class="demand-card__meta-item">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+                            fill="currentColor"
+                          />
+                        </svg>
+                        Zahrada: Lomena 1314, Pardubice
+                      </span>
+                    </div>
+                  </div>
+                </article>
+              </li>
+            </ul>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog class="offer-modal" id="offerModal">
+      <div class="offer-modal__header">
+        <div class="offer-modal__spacer"></div>
+        <button
+          class="offer-modal__close cross-button"
+          type="button"
+          onclick="offerModal.close()"
+        >
+          <span class="visually-hidden">Zavřít</span>
+        </button>
+      </div>
+
+      <div class="offer-modal__layout">
+        <div class="offer-modal__aside">
+          <h3 class="offer-modal__title h3">Sekání trávníku</h3>
+
+          <div class="offer-modal__chips">
+            <span class="chip chip--secondary">Sekání trávníku</span>
+            <span class="chip chip--secondary">Údržba záhonů</span>
+          </div>
+
+          <p class="offer-modal__text">
+            Potřebuji posekat velký trávník před domem, cca 200 m². Trávník je
+            poměrně zarostlý, takže bude potřeba důkladné sekání. Ideálně bych
+            chtěl i odvoz trávy. Zahrada je přístupná z ulice, parkování přímo
+            před domem.
+          </p>
+
+          <div class="offer-modal__meta">
+            <span class="offer-modal__meta-item">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"
+                  fill="currentColor"
+                />
+              </svg>
+              Termín: <time datetime="2026-06-15">15. 6. 2026</time>
+            </span>
+
+            <span class="offer-modal__meta-item">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+                  fill="currentColor"
+                />
+              </svg>
+              Město: Pardubice
+            </span>
+          </div>
+        </div>
+
+        <div class="offer-modal__content">
+          <h3 class="offer-modal__subtitle h3">Vaše nabídka</h3>
+
+          <div class="offer-modal__form">
+            <div class="offer-modal__field field">
+              <label for="offer-price" class="field__label visually-hidden"
+                >Cena</label
+              >
+              <div class="offer-modal__price-wrapper">
+                <input
+                  class="field__input"
+                  id="offer-price"
+                  name="price"
+                  type="number"
+                  min="0"
+                  placeholder="Cena"
+                />
+                <span class="offer-modal__currency">Kč</span>
+              </div>
+            </div>
+
+            <div class="offer-modal__field field">
+              <label
+                for="offer-description"
+                class="field__label visually-hidden"
+                >Popis</label
+              >
+              <textarea
+                class="field__input field__input--textarea"
+                id="offer-description"
+                name="description"
+                placeholder="Popis vaší nabídky..."
+              ></textarea>
+            </div>
+
+            <button
+              class="offer-modal__attach button button--transparent"
+              type="button"
+            >
+              <span class="button__icon">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
+              Přidat soubor
+            </button>
+
+            <button class="offer-modal__submit button" type="button">
+              Poslat
+            </button>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <script>
+      const offerModal = document.getElementById("offerModal");
+
+      document.querySelectorAll(".demand-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          offerModal.showModal();
+        });
+      });
+
+      offerModal.addEventListener("click", (e) => {
+        if (e.target === offerModal) {
+          offerModal.close();
+        }
+      });
+    </script>
+  </body>
+</html>

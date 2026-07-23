@@ -1,0 +1,210 @@
+/**
+  Normalizace box modelu
+ */
+*,
+::before,
+::after {
+  box-sizing: border-box;
+}
+
+/**
+  Odstraňujeme vnitřní odsazení zleva u tagů seznamů,
+  které mají atribut class
+ */
+:where(ul, ol):where([class]) {
+  padding-left: 0;
+}
+
+/**
+  Odstraňujeme vnější odsazení u body a dvou dalších tagů,
+  které mají atribut class
+ */
+body,
+:where(blockquote, figure, fieldset):where([class]) {
+  margin: 0;
+}
+
+/**
+  Odstraňujeme vertikální vnější odsazení u potřebných tagů,
+  které mají atribut class
+ */
+:where(
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  ul,
+  ol,
+  dl
+):where([class]) {
+  margin-block: 0;
+}
+
+:where(dd[class]) {
+  margin-left: 0;
+}
+
+:where(fieldset[class]) {
+  padding: 0;
+  border: none;
+}
+
+/**
+  Odstraňujeme standardní značku u nečíslovaného seznamu,
+  který má atribut class
+ */
+:where(ul[class]) {
+  list-style: none;
+}
+
+:where(address[class]) {
+  font-style: normal;
+}
+
+/**
+  Nulujeme vertikální vnější odsazení odstavce,
+  deklarujeme lokální proměnnou pro vnější odsazení dolů,
+  abychom se vyhnuli interakci s komplexnějším selektorem
+ */
+p {
+  --paragraphMarginBottom: 24px;
+
+  margin-block: 0;
+}
+
+/**
+  Vnější odsazení dolů pro odstavec bez atributu class,
+  který není poslední mezi svými sousedními elementy
+ */
+p:where(:not([class]):not(:last-child)) {
+  margin-bottom: var(--paragraphMarginBottom);
+}
+
+
+/**
+  Zjednodušujeme práci s obrázky a videi
+ */
+img,
+video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/**
+  Dědíme vlastnosti písma pro vstupní pole
+ */
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+html {
+  /**
+    Bude užitečné ve většině situací
+    (například když bude potřeba "přitlačit" footer ke spodku stránky)
+   */
+  height: 100%;
+  /**
+    Odstraňujeme poskok rozhraní horizontálně
+    při objevení / zmizení scrollbaru
+   */
+  scrollbar-gutter: stable;
+  /**
+    Plynulý scroll
+   */
+  scroll-behavior: smooth;
+}
+
+body {
+  /**
+    Bude užitečné ve většině situací
+    (například když bude potřeba "přitlačit" footer ke spodku stránky)
+   */
+  min-height: 100%;
+  /**
+    Sjednocený řádkový proklad
+   */
+  line-height: 1.5;
+}
+
+/**
+  Normalizace výšky elementu odkazu při jeho inspekci v DevTools
+ */
+a:where([class]) {
+  display: inline-flex;
+}
+
+/**
+  Kurzor-ruka při najetí myší na element
+ */
+button,
+label {
+  cursor: pointer;
+}
+
+/**
+  Odstraňuje šedé zvýraznění při klepnutí na mobilních zařízeních (iOS/Android)
+ */
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/**
+  Sjednocujeme barvu svg elementů
+  (s výjimkou těch, které již mají uvedený
+  atribut fill s hodnotou 'none' nebo začínající 'url')
+ */
+:where([fill]:not(
+  [fill="none"],
+  [fill^="url"]
+)) {
+  fill: currentColor;
+}
+
+/**
+  Sjednocujeme barvu svg elementů
+  (s výjimkou těch, které již mají uvedený
+  atribut stroke s hodnotou 'none')
+ */
+:where([stroke]:not(
+  [stroke="none"],
+  [stroke^="url"]
+)) {
+  stroke: currentColor;
+}
+
+/**
+  Opravujeme bug zpoždění změny barvy při interakci se svg elementy
+ */
+svg * {
+  transition-property: fill, stroke;
+}
+
+/**
+  Převod rámečků tabulek na klasický 'collapse' vzhled
+ */
+:where(table) {
+  border-collapse: collapse;
+  border-color: currentColor;
+}
+
+/**
+  Odstraňujeme všechny animace a přechody pro lidi,
+  kteří je preferují nepoužívat
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

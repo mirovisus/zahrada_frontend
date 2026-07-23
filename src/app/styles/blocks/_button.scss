@@ -1,0 +1,47 @@
+.button {
+  @include flex-center(true);
+
+  gap: 24px;
+
+  height: var(--button-height);
+  padding-inline: 42px;
+  color: var(--color-light);
+  background-color: var(--color-gray);
+  border: var(--border);
+  border-radius: var(--border-radius-small);
+
+  @include hover {
+    background-color: var(--color-accent);
+    border: 1px solid transparent;
+  }
+
+  &--transparent {
+    color: var(--color-dark);
+    background-color: transparent;
+
+    @include hover {
+      color: var(--color-light);
+      border: 1px solid transparent;
+    }
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  &--green {
+    background-color: var(--color-dark-alt);
+    border: 1px solid transparent;
+  }
+
+  &--delete {
+    background-color: var(--color-lightgray);
+
+    @include hover {
+      color: var(--color-light);
+      background-color: var(--color-attention);
+      border: 1px solid transparent;
+    }
+  }
+}

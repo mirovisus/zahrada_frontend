@@ -1,0 +1,35 @@
+// Utility funkce typu kontejneru nebo vizuálního skrytí (visual hidden)
+// Omezuje šířku části kontejneru
+.container {
+  max-width: calc(var(--container-width) + var(--container-padding-x)*2);
+  margin-inline: auto;
+  padding-inline: var(--container-padding-x);
+}
+
+// Pro zajištění přístupnosti interaktivních prvků
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  border: 0 !important;
+  padding: 0 !important;
+  white-space: nowrap !important;
+  clip-path: inset(100%) !important;
+  clip: rect(0 0 0 0) !important;
+  overflow: hidden !important;
+}
+
+// Skryje prvek na mobilních zařízeních s použitím media dotazů
+.hidden-mobile {
+  @include mobile {
+    display: none !important;
+  }
+}
+
+// Zobrazí na mobilních, ale skryje na zařízeních širších než mobilní zařízení
+.visible-mobile {
+  @include mobile-above {
+    display: none !important;
+  }
+}

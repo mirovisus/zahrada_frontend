@@ -1,0 +1,39 @@
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 24px;
+
+    &__page {
+        @include flex-center;
+ 
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid var(--color-lightgray);
+ 
+        @include fluid-text(14, 12);
+        color: var(--color-lightgray);
+        text-decoration: none;
+        transition: all var(--transition-duration) ease;
+ 
+        @include hover {
+            border-color: var(--color-gray);
+            color: var(--color-gray);
+        }
+ 
+        &--active {
+            background-color: var(--color-lightgray);
+            border-color: transparent;
+            color: var(--color-light);
+            cursor: default;
+ 
+            @include hover {
+                background-color: var(--color-lightgray); 
+                color: var(--color-light);
+                border-color: transparent;
+            }
+        }
+    }
+}

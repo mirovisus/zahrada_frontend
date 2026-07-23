@@ -1,0 +1,77 @@
+.profile-card {
+  background-color: var(--color-light);
+  border-radius: var(--border-radius);
+  padding: 30px;
+  box-shadow: var(--shadow-box-light);
+
+  @include mobile {
+    padding: 18px;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 30px;
+  }
+
+  &__avatar {
+    border-radius: 50%;
+    object-fit: cover;
+    border: var(--border-dashed);
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .h4 {
+      font-weight: 600;
+    }
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 18px;
+
+    .button--delete {
+      margin-top: 30px;
+    }
+  }
+
+  &__field--bio {
+    display: none; 
+    margin-bottom: 12px; 
+
+    &.is-worker {
+      display: flex;
+    }
+  }
+
+  &__bio {
+    border-color: var(--color-accent);
+    height: calc(var(--fieldInputHeight) * 2);
+    border-top-left-radius: 0;
+    padding-block: 14px; 
+    resize: none; 
+ 
+    scrollbar-width: none; // Firefox
+    &::-webkit-scrollbar {
+      display: none; // Chrome, Safari, Edge
+    }
+  }
+
+  &__field:has(input[type="password"]) {
+    margin-top: 18px;
+  }
+}
