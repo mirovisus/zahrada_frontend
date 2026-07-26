@@ -3,6 +3,9 @@ const BASE_URL = import.meta.env.VITE_API_URL
 const TOKEN_KEY = 'auth_token'
 const USER_KEY = 'auth_user'
 
+// Stránky mimo RequireAuth (viz app/router) - 401 zde nesmí hosta odhodit na /login.
+const PUBLIC_PATHS = ['/', '/catalog', '/application', '/login', '/signup']
+
 export class ApiError extends Error {
   constructor({ status, error, message, path, fieldErrors }) {
     super(message || error || 'Požadavek se nezdařil')
@@ -36,7 +39,7 @@ function handleUnauthorized() {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USER_KEY)
 
-  if (window.location.pathname !== '/login') {
+  if (!PUBLIC_PATHS.includes(window.location.pathname)) {
     window.location.href = '/login'
   }
 }

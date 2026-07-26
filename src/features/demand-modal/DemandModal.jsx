@@ -11,6 +11,16 @@ const emptyValues = {
   dueDate: '',
 }
 
+function validate(values, selectedServices) {
+  const errors = {}
+
+  if (!values.title.trim()) errors.title = 'Název poptávky je povinný'
+  if (selectedServices.length === 0) errors.services = 'Vyberte alespoň jeden typ služby'
+  if (!values.dueDate) errors.dueDate = 'Datum je povinné'
+
+  return errors
+}
+
 function NoticeIcon() {
   return (
     <svg
@@ -33,40 +43,68 @@ function NoticeIcon() {
 }
 
 export const DemandModal = forwardRef(function DemandModal(
-  { mode = 'create', garden, serviceOptions = [], initialValues, onSubmit, onDelete },
+  {
+    mode = 'create',
+    garden,
+    serviceOptions = [],
+    initialValues,
+    hasProposals = false,
+    isLoading = false,
+    error = '',
+    onSubmit,
+    onDelete,
+  },
   ref,
 ) {
   const isEdit = mode === 'edit'
   const [values, setValues] = useState({ ...emptyValues, ...initialValues })
   const [selectedServices, setSelectedServices] = useState(initialValues?.services ?? [])
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     setValues({ ...emptyValues, ...initialValues })
     setSelectedServices(initialValues?.services ?? [])
+    setFieldErrors({})
   }, [initialValues])
+
+  const locked = isEdit && (hasProposals || isLoading)
+  const isDisabled = locked || isSubmitting
 
   const handleChange = (event) => {
     const { name, value } = event.target
     setValues((prev) => ({ ...prev, [name]: value }))
+    setFieldErrors((prev) => ({ ...prev, [name]: undefined }))
   }
 
   const handleServiceSelect = (event) => {
     const value = event.target.value
     if (!value) return
-    const option = serviceOptions.find((item) => item.value === value)
-    setSelectedServices((prev) => (prev.some((service) => service.value === value) ? prev : [...prev, option]))
+    const option = serviceOptions.find((item) => String(item.value) === value)
+    if (!option) return
+    setSelectedServices((prev) => (prev.some((service) => service.value === option.value) ? prev : [...prev, option]))
+    setFieldErrors((prev) => ({ ...prev, services: undefined }))
   }
 
   const handleServiceRemove = (value) => {
     setSelectedServices((prev) => prev.filter((service) => service.value !== value))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    onSubmit?.({ ...values, services: selectedServices })
-    if (!isEdit) {
+
+    const validationErrors = validate(values, selectedServices)
+    setFieldErrors(validationErrors)
+    if (Object.keys(validationErrors).length > 0) return
+
+    setIsSubmitting(true)
+    const success = await onSubmit?.({ ...values, services: selectedServices })
+    setIsSubmitting(false)
+
+    if (success && !isEdit) {
       setValues(emptyValues)
       setSelectedServices([])
+      setFieldErrors({})
     }
   }
 
@@ -94,27 +132,38 @@ export const DemandModal = forwardRef(function DemandModal(
                   mainPhotoUrl={garden.mainPhotoUrl}
                   gardenName={garden.gardenName}
                   street={garden.street}
+                  houseNumber={garden.houseNumber}
                   city={garden.city}
                 />
               )}
 
               {isEdit && (
                 <>
-                  <Button variant="delete" type="button" className="demand-modal__delete" onClick={onDelete}>
+                  <Button
+                    variant="delete"
+                    type="button"
+                    className="demand-modal__delete"
+                    onClick={onDelete}
+                    disabled={isDisabled}
+                  >
                     Smazat poptávku
                   </Button>
 
-                  <div className="demand-modal__notice">
-                    <NoticeIcon />
-                    <p className="demand-modal__notice-text">
-                      Poptávku lze upravit nebo smazat pouze pokud nikdo neposlal svou nabídku.
-                    </p>
-                  </div>
+                  {hasProposals && (
+                    <div className="demand-modal__notice">
+                      <NoticeIcon />
+                      <p className="demand-modal__notice-text">
+                        Poptávku lze upravit nebo smazat pouze pokud nikdo neposlal svou nabídku.
+                      </p>
+                    </div>
+                  )}
                 </>
               )}
             </div>
 
             <div className="demand-modal__content">
+              {isEdit && isLoading && <p>Načítání…</p>}
+
               <Field
                 id={`demand-${mode}-title`}
                 name="title"
@@ -123,6 +172,8 @@ export const DemandModal = forwardRef(function DemandModal(
                 type="text"
                 value={values.title}
                 onChange={handleChange}
+                error={fieldErrors.title}
+                disabled={isDisabled}
                 required
               />
 
@@ -132,6 +183,8 @@ export const DemandModal = forwardRef(function DemandModal(
                 label="Vyberte typ služby"
                 value=""
                 onChange={handleServiceSelect}
+                error={fieldErrors.services}
+                disabled={isDisabled}
               >
                 <option value="" disabled>
                   Vyberte typ služby
@@ -166,6 +219,7 @@ export const DemandModal = forwardRef(function DemandModal(
                 type="textarea"
                 value={values.description}
                 onChange={handleChange}
+                disabled={isDisabled}
               />
 
               <Field
@@ -175,9 +229,13 @@ export const DemandModal = forwardRef(function DemandModal(
                 type="date"
                 value={values.dueDate}
                 onChange={handleChange}
+                error={fieldErrors.dueDate}
+                disabled={isDisabled}
               />
 
-              <Button variant="green" type="submit" className="demand-modal__submit">
+              {error && <p className="field__error">{error}</p>}
+
+              <Button variant="green" type="submit" className="demand-modal__submit" disabled={isDisabled}>
                 {isEdit ? 'Uložit změny' : 'Poslat'}
               </Button>
             </div>

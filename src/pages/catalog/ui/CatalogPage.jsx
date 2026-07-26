@@ -1,23 +1,89 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { FilterBox } from '../../../features/catalog-filters'
-import { DemandCard, mockCatalogDemands } from '../../../entities/demand'
+import { OfferModal } from '../../../features/create-proposal'
+import { DemandCard } from '../../../entities/demand'
 import { Chip } from '../../../shared/ui/chip'
 import { Pagination } from '../../../shared/ui/pagination'
-import { cities, workTypes } from '../../../shared/api/mock'
+import { cities } from '../../../shared/api/mock'
+import { getCatalog, getDemand } from '../../../shared/api/demands'
+import { getServiceTypes } from '../../../shared/api/serviceTypes'
+import { createProposal } from '../../../shared/api/proposals'
+import { useAuth } from '../../../shared/auth'
 
-const CITY_OPTIONS = cities.map((city) => ({ value: city.slug, label: city.name }))
+const CITY_OPTIONS = cities.map((city) => ({ value: city.name, label: city.name }))
 
-const WORK_TYPE_OPTIONS = workTypes.map((workType) => ({ value: workType.slug, label: workType.name }))
-
-const emptyFilters = { city: [], workType: [] }
+const emptyFilters = { city: [], serviceTypeIds: [] }
 
 function findLabel(options, value) {
   return options.find((option) => option.value === value)?.label ?? value
 }
 
 export function CatalogPage() {
+  const navigate = useNavigate()
+  const { isAuthenticated, user } = useAuth()
+
   const [filters, setFilters] = useState(emptyFilters)
   const [currentPage, setCurrentPage] = useState(1)
+
+  const [serviceTypes, setServiceTypes] = useState([])
+  const SERVICE_TYPE_OPTIONS = serviceTypes.map((serviceType) => ({
+    value: serviceType.id,
+    label: serviceType.name,
+  }))
+
+  const [demands, setDemands] = useState([])
+  const [totalPages, setTotalPages] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const [selectedDemandId, setSelectedDemandId] = useState(null)
+  const [demandDetail, setDemandDetail] = useState(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [modalError, setModalError] = useState('')
+  const offerModalRef = useRef(null)
+
+  useEffect(() => {
+    let ignore = false
+
+    getServiceTypes()
+      .then((data) => {
+        if (!ignore) setServiceTypes(data)
+      })
+      .catch(() => {})
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    setIsLoading(true)
+    setError('')
+
+    getCatalog({
+      city: filters.city,
+      serviceTypeIds: filters.serviceTypeIds,
+      page: currentPage - 1,
+    })
+      .then((page) => {
+        if (ignore) return
+        setDemands(page.content)
+        setTotalPages(page.totalPages)
+      })
+      .catch((err) => {
+        if (!ignore) setError(err.message || 'Nepodařilo se načíst poptávky')
+      })
+      .finally(() => {
+        if (!ignore) setIsLoading(false)
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [filters, currentPage])
 
   const toggleFilter = (category, value) => {
     setFilters((prev) => {
@@ -27,23 +93,51 @@ export function CatalogPage() {
         : [...current, value]
       return { ...prev, [category]: next }
     })
+    setCurrentPage(1)
   }
 
   const activeChips = [
     ...filters.city.map((value) => ({ category: 'city', value, label: findLabel(CITY_OPTIONS, value) })),
-    ...filters.workType.map((value) => ({
-      category: 'workType',
+    ...filters.serviceTypeIds.map((value) => ({
+      category: 'serviceTypeIds',
       value,
-      label: findLabel(WORK_TYPE_OPTIONS, value),
+      label: findLabel(SERVICE_TYPE_OPTIONS, value),
     })),
   ]
 
-  const filteredDemands = mockCatalogDemands.filter((demand) => {
-    const cityMatches = filters.city.length === 0 || filters.city.includes(demand.citySlug)
-    const workTypeMatches =
-      filters.workType.length === 0 || demand.workTypeSlugs.some((slug) => filters.workType.includes(slug))
-    return cityMatches && workTypeMatches
-  })
+  const handleCardClick = (demandId) => {
+    if (!isAuthenticated) {
+      navigate('/login')
+      return
+    }
+    if (user?.role !== 'WORKER') return
+
+    setSelectedDemandId(demandId)
+    setDemandDetail(null)
+    setModalError('')
+    setDetailLoading(true)
+    offerModalRef.current?.showModal()
+
+    getDemand(demandId)
+      .then((data) => setDemandDetail(data))
+      .catch((err) => setModalError(err.message || 'Nepodařilo se načíst poptávku'))
+      .finally(() => setDetailLoading(false))
+  }
+
+  const handleOfferSubmit = (values) => {
+    if (!selectedDemandId) return false
+    setModalError('')
+
+    return createProposal(selectedDemandId, values)
+      .then(() => {
+        offerModalRef.current?.close()
+        return true
+      })
+      .catch((err) => {
+        setModalError(err.message || 'Nabídku se nepodařilo odeslat')
+        return false
+      })
+  }
 
   return (
     <div className="split-layout catalog container">
@@ -57,9 +151,9 @@ export function CatalogPage() {
 
         <FilterBox
           title="Typ práce"
-          items={WORK_TYPE_OPTIONS}
-          selectedValues={filters.workType}
-          onToggle={(value) => toggleFilter('workType', value)}
+          items={SERVICE_TYPE_OPTIONS}
+          selectedValues={filters.serviceTypeIds}
+          onToggle={(value) => toggleFilter('serviceTypeIds', value)}
         />
       </aside>
 
@@ -84,23 +178,34 @@ export function CatalogPage() {
             )}
           </header>
 
-          <ul className="demand-list__items">
-            {filteredDemands.map((demand) => (
-              <li className="demand-list__item" key={demand.id}>
-                <DemandCard
-                  title={demand.title}
-                  services={demand.services}
-                  preview={demand.preview}
-                  city={demand.city}
-                  date={demand.date}
-                />
-              </li>
-            ))}
-          </ul>
+          {isLoading && <p>Načítání…</p>}
 
-          <Pagination currentPage={currentPage} totalPages={3} onPageChange={setCurrentPage} />
+          {!isLoading && error && <p className="field__error">{error}</p>}
+
+          {!isLoading && !error && demands.length === 0 && <p>Žádné poptávky nenalezeny</p>}
+
+          {!isLoading && !error && demands.length > 0 && (
+            <ul className="demand-list__items">
+              {demands.map((demand) => (
+                <li className="demand-list__item" key={demand.id}>
+                  <DemandCard
+                    gardenName={demand.gardenName}
+                    descriptionPreview={demand.descriptionPreview}
+                    desiredDate={demand.desiredDate}
+                    onClick={() => handleCardClick(demand.id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {!isLoading && !error && totalPages > 1 && (
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+          )}
         </div>
       </main>
+
+      <OfferModal ref={offerModalRef} demand={demandDetail} isLoading={detailLoading} error={modalError} onSubmit={handleOfferSubmit} />
     </div>
   )
 }

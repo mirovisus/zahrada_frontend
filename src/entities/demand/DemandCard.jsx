@@ -1,20 +1,37 @@
 import { Chip } from '../../shared/ui/chip'
 import { ArrowIcon, LocationIcon, CalendarIcon } from '../../shared/ui/icons'
 
-export function DemandCard({ title, services = [], preview, city, date, address, dueDate, status, onClick }) {
+export function DemandCard({
+  title,
+  gardenName,
+  services = [],
+  preview,
+  descriptionPreview,
+  city,
+  date,
+  desiredDate,
+  address,
+  dueDate,
+  status,
+  onClick,
+}) {
+  const cardTitle = gardenName ?? title
+  const cardPreview = descriptionPreview ?? preview
+  const cardDate = date ?? desiredDate
+
   return (
     <article className="demand-card" onClick={onClick}>
       <div className="demand-card__body">
         <div className="demand-card__header">
           {status ? (
             <div className="demand-card__header-left">
-              <h3 className="demand-card__title h4">{title}</h3>
+              <h3 className="demand-card__title h4">{cardTitle}</h3>
               <Chip variant="status" status={status.key}>
                 {status.label}
               </Chip>
             </div>
           ) : (
-            <h3 className="demand-card__title h4">{title}</h3>
+            <h3 className="demand-card__title h4">{cardTitle}</h3>
           )}
           <ArrowIcon className="demand-card__icon" />
         </div>
@@ -29,7 +46,7 @@ export function DemandCard({ title, services = [], preview, city, date, address,
           </div>
         )}
 
-        {preview && <p className="demand-card__preview">{preview}</p>}
+        {cardPreview && <p className="demand-card__preview">{cardPreview}</p>}
 
         {dueDate ? (
           <p className="demand-card__date">
@@ -51,10 +68,10 @@ export function DemandCard({ title, services = [], preview, city, date, address,
                     {city}
                   </span>
                 )}
-                {date && (
+                {cardDate && (
                   <span className="demand-card__meta-item">
                     <CalendarIcon />
-                    <time dateTime={date}>{new Date(date).toLocaleDateString('cs-CZ')}</time>
+                    <time dateTime={cardDate}>{new Date(cardDate).toLocaleDateString('cs-CZ')}</time>
                   </span>
                 )}
               </>

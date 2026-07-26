@@ -1,20 +1,33 @@
 import { useEffect, useRef, useState } from 'react'
 import { GardenCard, GardenCardAdd } from '../../../entities/garden'
-import { DemandCard, mockProfileDemands, profileDemandStatuses } from '../../../entities/demand'
+import { DemandCard, gardenDemandStatuses } from '../../../entities/demand'
+import { ProposalsModal } from '../../../features/review-proposals'
 import { Field } from '../../../shared/ui/field'
 import { Button } from '../../../shared/ui/button'
 import { Divider } from '../../../shared/ui/divider'
 import { Chip } from '../../../shared/ui/chip'
 import { getGardens } from '../../../shared/api/gardens'
+import { getMyDemands } from '../../../shared/api/demands'
+import { getProposalsByDemand, acceptProposal, rejectProposal } from '../../../shared/api/proposals'
 import { updateOwnerProfile, updateWorkerProfile } from '../../../shared/api/profile'
 import { normalizeFieldErrors } from '../../../shared/api/client'
 import { useAuth } from '../../../shared/auth'
-import { OfferModal } from './OfferModal'
 
-const STATUS_LABELS = profileDemandStatuses.reduce((labels, filter) => {
+const STATUS_LABELS = gardenDemandStatuses.reduce((labels, filter) => {
   if (filter.value !== 'all') labels[filter.value] = filter.label
   return labels
 }, {})
+
+// mapuje DemandStatus na modifikátor chipu definovaný v _chip.scss (chip--nova, chip--schvalena, ...)
+const STATUS_CHIP_KEYS = {
+  NOVA: 'nova',
+  SCHVALENA: 'schvalena',
+  CEKA_NA_PLATBU: 'ceka-na-platbu',
+  ZAPLACENA: 'zaplaceno',
+  PRACE_DOKONCENY: 'dokonceno',
+  PRACE_SCHVALENY: 'dokonceno',
+  ZRUSENA: 'zruseno',
+}
 
 const ROLE_LABELS = {
   OWNER: 'Vlastník zahrady',
@@ -107,6 +120,7 @@ function ProfileCard({ user, profile, isWorker, onSaved }) {
   }
 
   const handleDeleteAccount = () => {
+    // TODO: backend endpoint chybí - smazání účtu není na API implementováno
     console.log('delete account')
   }
 
@@ -115,7 +129,7 @@ function ProfileCard({ user, profile, isWorker, onSaved }) {
       <div className="profile-card__header">
         <img
           className="profile-card__avatar"
-          src="/images/profile/profil-man.jpg"
+          src={profile.avatarUrl || '/images/profile/profil-man.jpg'}
           alt="person"
           width="72"
           height="72"
@@ -225,12 +239,21 @@ export function ProfilePage() {
   const isWorker = user?.role === 'WORKER'
 
   const [activeStatus, setActiveStatus] = useState('all')
-  const [selectedDemand, setSelectedDemand] = useState(null)
-  const offerModalRef = useRef(null)
+  const [demandsRefreshKey, setDemandsRefreshKey] = useState(0)
 
   const [gardens, setGardens] = useState([])
   const [gardensLoading, setGardensLoading] = useState(true)
   const [gardensError, setGardensError] = useState('')
+
+  const [demands, setDemands] = useState([])
+  const [demandsLoading, setDemandsLoading] = useState(true)
+  const [demandsError, setDemandsError] = useState('')
+
+  const [selectedDemand, setSelectedDemand] = useState(null)
+  const [proposals, setProposals] = useState([])
+  const [proposalsLoading, setProposalsLoading] = useState(false)
+  const [proposalsError, setProposalsError] = useState('')
+  const proposalsModalRef = useRef(null)
 
   useEffect(() => {
     let ignore = false
@@ -254,19 +277,71 @@ export function ProfilePage() {
     }
   }, [])
 
-  const filteredDemands =
-    activeStatus === 'all'
-      ? mockProfileDemands
-      : mockProfileDemands.filter((demand) => demand.status === activeStatus)
+  useEffect(() => {
+    if (isWorker) return
+    let ignore = false
 
-  const openOfferModal = (demand) => {
-    setSelectedDemand(demand)
-    offerModalRef.current?.showModal()
+    setDemandsLoading(true)
+    setDemandsError('')
+
+    getMyDemands({ status: activeStatus === 'all' ? undefined : activeStatus })
+      .then((page) => {
+        if (!ignore) setDemands(page.content)
+      })
+      .catch((error) => {
+        if (!ignore) setDemandsError(error.message || 'Nepodařilo se načíst poptávky')
+      })
+      .finally(() => {
+        if (!ignore) setDemandsLoading(false)
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [isWorker, activeStatus, demandsRefreshKey])
+
+  const loadProposals = (demandId) => {
+    setProposalsLoading(true)
+    setProposalsError('')
+
+    getProposalsByDemand(demandId)
+      .then((data) => setProposals(data))
+      .catch((error) => setProposalsError(error.message || 'Nepodařilo se načíst návrhy'))
+      .finally(() => setProposalsLoading(false))
   }
 
-  const handleOfferSubmit = (offer) => {
-    console.log({ demandId: selectedDemand?.id, ...offer })
-    offerModalRef.current?.close()
+  const openProposalsModal = (demand) => {
+    setSelectedDemand(demand)
+    setProposals([])
+    setProposalsError('')
+    proposalsModalRef.current?.showModal()
+    loadProposals(demand.id)
+  }
+
+  const handleAccept = (proposalId) => {
+    if (!selectedDemand) return
+    if (!window.confirm('Opravdu chcete přijmout tento návrh? Ostatní návrhy budou zamítnuty.')) return
+
+    setProposalsError('')
+    acceptProposal(proposalId)
+      .then(() => {
+        loadProposals(selectedDemand.id)
+        setDemandsRefreshKey((key) => key + 1)
+      })
+      .catch((error) => setProposalsError(error.message || 'Návrh se nepodařilo přijmout'))
+  }
+
+  const handleReject = (proposalId) => {
+    if (!selectedDemand) return
+    if (!window.confirm('Opravdu chcete zamítnout tento návrh?')) return
+
+    setProposalsError('')
+    rejectProposal(proposalId)
+      .then(() => {
+        loadProposals(selectedDemand.id)
+        setDemandsRefreshKey((key) => key + 1)
+      })
+      .catch((error) => setProposalsError(error.message || 'Návrh se nepodařilo zamítnout'))
   }
 
   return (
@@ -299,6 +374,7 @@ export function ProfilePage() {
                 {gardens.map((garden) => (
                   <li className="gardens__item" key={garden.id}>
                     <GardenCard
+                      to={`/garden/${garden.id}`}
                       mainPhotoUrl={garden.mainPhotoUrl}
                       gardenName={garden.gardenName}
                       street={garden.street}
@@ -314,45 +390,60 @@ export function ProfilePage() {
               </ul>
             )}
 
-            <div className="demand-list demand-list--embedded">
-              <header className="demand-list__header">
-                <h3 className="demand-list__title h3">Seznam poptávek</h3>
+            {!isWorker && (
+              <div className="demand-list demand-list--embedded">
+                <header className="demand-list__header">
+                  <h3 className="demand-list__title h3">Seznam poptávek</h3>
 
-                <nav className="demand-list__filters" aria-label="Filtr stavu poptávek">
-                  {profileDemandStatuses.map((filter) => (
-                    <Chip
-                      key={filter.value}
-                      as="button"
-                      variant={activeStatus === filter.value ? 'active' : undefined}
-                      aria-pressed={activeStatus === filter.value}
-                      onClick={() => setActiveStatus(filter.value)}
-                    >
-                      {filter.label}
-                    </Chip>
-                  ))}
-                </nav>
-              </header>
+                  <nav className="demand-list__filters" aria-label="Filtr stavu poptávek">
+                    {gardenDemandStatuses.map((filter) => (
+                      <Chip
+                        key={filter.value}
+                        as="button"
+                        variant={activeStatus === filter.value ? 'active' : undefined}
+                        aria-pressed={activeStatus === filter.value}
+                        onClick={() => setActiveStatus(filter.value)}
+                      >
+                        {filter.label}
+                      </Chip>
+                    ))}
+                  </nav>
+                </header>
 
-              <ul className="demand-list__items">
-                {filteredDemands.map((demand) => (
-                  <li className="demand-list__item" key={demand.id}>
-                    <DemandCard
-                      title={demand.title}
-                      services={demand.services}
-                      preview={demand.preview}
-                      address={demand.address}
-                      status={{ key: demand.status, label: STATUS_LABELS[demand.status] }}
-                      onClick={() => openOfferModal(demand)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </div>
+                {demandsLoading && <p>Načítání…</p>}
+                {!demandsLoading && demandsError && <p className="field__error">{demandsError}</p>}
+                {!demandsLoading && !demandsError && demands.length === 0 && <p>Žádné poptávky nenalezeny</p>}
+
+                {!demandsLoading && !demandsError && demands.length > 0 && (
+                  <ul className="demand-list__items">
+                    {demands.map((demand) => (
+                      <li className="demand-list__item" key={demand.id}>
+                        <DemandCard
+                          gardenName={demand.gardenName}
+                          descriptionPreview={demand.descriptionPreview}
+                          desiredDate={demand.desiredDate}
+                          status={{ key: STATUS_CHIP_KEYS[demand.status], label: STATUS_LABELS[demand.status] }}
+                          onClick={() => openProposalsModal(demand)}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </section>
         </main>
       </div>
 
-      <OfferModal ref={offerModalRef} demand={selectedDemand} onSubmit={handleOfferSubmit} />
+      <ProposalsModal
+        ref={proposalsModalRef}
+        demand={selectedDemand}
+        proposals={proposals}
+        isLoading={proposalsLoading}
+        error={proposalsError}
+        onAccept={handleAccept}
+        onReject={handleReject}
+      />
     </>
   )
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Field } from '../../shared/ui/field'
 import { Button } from '../../shared/ui/button'
+import { normalizeFieldErrors } from '../../shared/api/client'
 
 const emptyValues = {
   gardenName: '',
@@ -10,6 +11,26 @@ const emptyValues = {
   street: '',
   houseNumber: '',
   postalCode: '',
+}
+
+const POSTAL_CODE_REGEX = /^\d{3}\s?\d{2}$/
+
+function validate(values) {
+  const errors = {}
+
+  if (!values.gardenName.trim()) errors.gardenName = 'Název zahrady je povinný'
+
+  const area = Number(values.areaSqm)
+  if (Number.isNaN(area) || area <= 0) errors.areaSqm = 'Plocha musí být kladné číslo'
+
+  if (!values.city.trim()) errors.city = 'Město je povinné'
+  if (!values.street.trim()) errors.street = 'Ulice je povinná'
+
+  if (values.postalCode.trim() && !POSTAL_CODE_REGEX.test(values.postalCode.trim())) {
+    errors.postalCode = 'PSČ musí mít formát 5 číslic, volitelně oddělených mezerou'
+  }
+
+  return errors
 }
 
 function UploadIcon() {
@@ -30,13 +51,19 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete 
   const isEdit = mode === 'edit'
   const [values, setValues] = useState({ ...emptyValues, ...initialValues })
   const [photoFile, setPhotoFile] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(initialValues?.photoUrl || null)
+  const [photoPreview, setPhotoPreview] = useState(initialValues?.mainPhotoUrl || null)
+  const [errors, setErrors] = useState({})
+  const [serverError, setServerError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (event) => {
     const { name, value } = event.target
     setValues((prev) => ({ ...prev, [name]: value }))
+    setErrors((prev) => ({ ...prev, [name]: undefined }))
   }
 
+  // TODO: backend endpoint chybí - nahrávání souborů není na API implementováno (Garden.mainPhotoUrl),
+  // vybraný soubor se proto jen zobrazí jako náhled a nikam se neodesílá.
   const handlePhotoChange = (event) => {
     const file = event.target.files[0]
     if (!file) return
@@ -44,9 +71,23 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete 
     setPhotoPreview(URL.createObjectURL(file))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    onSubmit?.({ ...values, photo: photoFile })
+    setServerError('')
+
+    const validationErrors = validate(values)
+    setErrors(validationErrors)
+    if (Object.keys(validationErrors).length > 0) return
+
+    setIsSubmitting(true)
+    try {
+      await onSubmit?.({ ...values, photo: photoFile })
+    } catch (error) {
+      if (error.fieldErrors) setErrors((prev) => ({ ...prev, ...normalizeFieldErrors(error.fieldErrors) }))
+      setServerError(error.message || 'Uložení se nezdařilo')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -104,6 +145,8 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete 
               type="text"
               value={values.gardenName}
               onChange={handleChange}
+              error={errors.gardenName}
+              disabled={isSubmitting}
               required
             />
 
@@ -116,6 +159,8 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete 
               min="0"
               value={values.areaSqm}
               onChange={handleChange}
+              error={errors.areaSqm}
+              disabled={isSubmitting}
             />
 
             <Field
@@ -126,6 +171,8 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete 
               type="text"
               value={values.city}
               onChange={handleChange}
+              error={errors.city}
+              disabled={isSubmitting}
             />
 
             <div className="garden-form__row">
@@ -137,6 +184,8 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete 
                 type="text"
                 value={values.street}
                 onChange={handleChange}
+                error={errors.street}
+                disabled={isSubmitting}
               />
 
               <Field
@@ -147,6 +196,8 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete 
                 type="text"
                 value={values.houseNumber}
                 onChange={handleChange}
+                error={errors.houseNumber}
+                disabled={isSubmitting}
               />
 
               <Field
@@ -157,10 +208,14 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete 
                 type="text"
                 value={values.postalCode}
                 onChange={handleChange}
+                error={errors.postalCode}
+                disabled={isSubmitting}
               />
             </div>
 
-            <Button variant="green" type="submit" className="garden-form__submit">
+            {serverError && <p className="field__error">{serverError}</p>}
+
+            <Button variant="green" type="submit" className="garden-form__submit" disabled={isSubmitting}>
               {isEdit ? 'Uložit změny' : 'Vytvořit'}
             </Button>
           </div>

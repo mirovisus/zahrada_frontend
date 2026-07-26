@@ -1,3 +1,5 @@
+// TODO: backend endpoint chybí - není odkud načíst reálný seznam měst (Garden.address.city je
+// volný text, žádný číselník měst na backendu neexistuje), proto zůstává statický seznam.
 export const cities = [
   { id: 1, slug: 'pardubice', name: 'Pardubice' },
   { id: 2, slug: 'hradec-kralove', name: 'Hradec Králové' },
