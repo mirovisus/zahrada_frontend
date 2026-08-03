@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { FilterBox } from '../../../features/catalog-filters'
 import { OfferModal } from '../../../features/create-proposal'
 import { DemandCard } from '../../../entities/demand'
@@ -9,6 +8,7 @@ import { cities } from '../../../shared/api/mock'
 import { getCatalog, getDemand } from '../../../shared/api/demands'
 import { getServiceTypes } from '../../../shared/api/serviceTypes'
 import { createProposal } from '../../../shared/api/proposals'
+import { useToast } from '../../../shared/ui/toast'
 import { useAuth } from '../../../shared/auth'
 
 const CITY_OPTIONS = cities.map((city) => ({ value: city.name, label: city.name }))
@@ -20,8 +20,9 @@ function findLabel(options, value) {
 }
 
 export function CatalogPage() {
-  const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
+  const toast = useToast()
+  const viewerRole = isAuthenticated ? user?.role : 'GUEST'
 
   const [filters, setFilters] = useState(emptyFilters)
   const [currentPage, setCurrentPage] = useState(1)
@@ -106,12 +107,6 @@ export function CatalogPage() {
   ]
 
   const handleCardClick = (demandId) => {
-    if (!isAuthenticated) {
-      navigate('/login')
-      return
-    }
-    if (user?.role !== 'WORKER') return
-
     setSelectedDemandId(demandId)
     setDemandDetail(null)
     setModalError('')
@@ -131,10 +126,13 @@ export function CatalogPage() {
     return createProposal(selectedDemandId, values)
       .then(() => {
         offerModalRef.current?.close()
+        toast.success('Nabídka odeslána')
         return true
       })
       .catch((err) => {
-        setModalError(err.message || 'Nabídku se nepodařilo odeslat')
+        const message = err.message || 'Nabídku se nepodařilo odeslat'
+        setModalError(message)
+        toast.error(message)
         return false
       })
   }
@@ -191,7 +189,7 @@ export function CatalogPage() {
                   <DemandCard
                     gardenName={demand.gardenName}
                     descriptionPreview={demand.descriptionPreview}
-                    desiredDate={demand.desiredDate}
+                    urgencyLabel={demand.urgencyLabel}
                     onClick={() => handleCardClick(demand.id)}
                   />
                 </li>
@@ -205,7 +203,14 @@ export function CatalogPage() {
         </div>
       </main>
 
-      <OfferModal ref={offerModalRef} demand={demandDetail} isLoading={detailLoading} error={modalError} onSubmit={handleOfferSubmit} />
+      <OfferModal
+        ref={offerModalRef}
+        demand={demandDetail}
+        viewerRole={viewerRole}
+        isLoading={detailLoading}
+        error={modalError}
+        onSubmit={handleOfferSubmit}
+      />
     </div>
   )
 }

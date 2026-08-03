@@ -35,11 +35,11 @@ function LogoutIcon() {
   )
 }
 
-export function Header() {
+export function Header({ layout = 'landing' }) {
   const overlayRef = useRef(null)
   const navigate = useNavigate()
   const { isAuthenticated, logout } = useAuth()
-  const variant = isAuthenticated ? 'auth' : 'guest'
+  const isAppLayout = layout === 'app'
 
   const openOverlay = () => overlayRef.current?.showModal()
 
@@ -52,7 +52,7 @@ export function Header() {
     <>
       <header className="header">
         <div className="header__inner container">
-          {variant === 'auth' ? (
+          {isAppLayout ? (
             <div className="header__spacer" />
           ) : (
             <>
@@ -86,10 +86,38 @@ export function Header() {
 
           <Logo className="header__logo" />
 
-          {variant === 'auth' ? (
+          {isAppLayout ? (
             <>
               <div className="header__actions hidden-mobile">
                 <ul className="header__menu-list">
+                  <li className="header__menu-item">
+                    <Button
+                      variant="transparent"
+                      className="header__button"
+                      onClick={handleLogout}
+                    >
+                      Odhlásit se
+                    </Button>
+                  </li>
+                </ul>
+              </div>
+
+              <IconButton
+                className="visible-mobile"
+                icon={<LogoutIcon />}
+                label="Odhlásit se"
+                onClick={handleLogout}
+              />
+            </>
+          ) : isAuthenticated ? (
+            <>
+              <div className="header__actions hidden-mobile">
+                <ul className="header__menu-list">
+                  <li className="header__menu-item">
+                    <Link className="header__menu-link" to="/profile">
+                      Můj profil
+                    </Link>
+                  </li>
                   <li className="header__menu-item">
                     <Button
                       variant="transparent"
@@ -143,7 +171,7 @@ export function Header() {
         </div>
       </header>
 
-      {variant !== 'auth' && <MobileOverlay ref={overlayRef} />}
+      {!isAppLayout && <MobileOverlay ref={overlayRef} />}
     </>
   )
 }

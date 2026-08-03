@@ -27,3 +27,19 @@ export function deleteGarden(id) {
     method: 'DELETE',
   })
 }
+
+export function uploadGardenPhoto(id, file) {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  return apiRequest(`/api/gardens/${id}/photo`, {
+    method: 'POST',
+    body: formData,
+  })
+}
+
+export function deleteGardenPhoto(id) {
+  return apiRequest(`/api/gardens/${id}/photo`, {
+    method: 'DELETE',
+  })
+}

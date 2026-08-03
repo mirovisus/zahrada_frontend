@@ -5,13 +5,28 @@ import { DemandModal } from '../../../features/demand-modal'
 import { DemandCard, gardenDemandStatuses } from '../../../entities/demand'
 import { Chip } from '../../../shared/ui/chip'
 import { Button } from '../../../shared/ui/button'
-import { getGarden, updateGarden, deleteGarden } from '../../../shared/api/gardens'
-import { getMyDemands, getDemand, createDemand, updateDemand, deleteDemand } from '../../../shared/api/demands'
+import { useToast } from '../../../shared/ui/toast'
+import {
+  getGarden,
+  updateGarden,
+  deleteGarden,
+  uploadGardenPhoto,
+  deleteGardenPhoto,
+} from '../../../shared/api/gardens'
+import {
+  getDemandsByGarden,
+  getDemand,
+  createDemand,
+  updateDemand,
+  deleteDemand,
+  getUrgencies,
+} from '../../../shared/api/demands'
 import { getServiceTypes } from '../../../shared/api/serviceTypes'
 
 export function GardenEditPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const toast = useToast()
   const gardenId = Number(id)
 
   const [garden, setGarden] = useState(null)
@@ -26,6 +41,7 @@ export function GardenEditPage() {
   const [demandsError, setDemandsError] = useState('')
 
   const [serviceTypes, setServiceTypes] = useState([])
+  const [urgencies, setUrgencies] = useState([])
 
   const [editingDemandId, setEditingDemandId] = useState(null)
   const [editingDemand, setEditingDemand] = useState(null)
@@ -36,6 +52,7 @@ export function GardenEditPage() {
   const editModalRef = useRef(null)
 
   const SERVICE_OPTIONS = serviceTypes.map((serviceType) => ({ value: serviceType.id, label: serviceType.name }))
+  const URGENCY_OPTIONS = urgencies.map((urgency) => ({ value: urgency.id, label: urgency.label }))
 
   useEffect(() => {
     let ignore = false
@@ -76,12 +93,31 @@ export function GardenEditPage() {
   useEffect(() => {
     let ignore = false
 
+    getUrgencies()
+      .then((data) => {
+        if (!ignore) setUrgencies(data)
+      })
+      .catch(() => {})
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
     setDemandsLoading(true)
     setDemandsError('')
 
-    getMyDemands({ status: activeStatus === 'all' ? undefined : activeStatus })
+    const status = activeStatus === 'all' ? undefined : activeStatus
+
+    getDemandsByGarden(gardenId, { status })
       .then((page) => {
-        if (!ignore) setDemands(page.content)
+        if (ignore) return
+        // backend endpoint doesn't filter by status yet, filter client-side as a safety net
+        const content = status ? page.content.filter((demand) => demand.status === status) : page.content
+        setDemands(content)
       })
       .catch((err) => {
         if (!ignore) setDemandsError(err.message || 'Nepodařilo se načíst poptávky')
@@ -93,14 +129,14 @@ export function GardenEditPage() {
     return () => {
       ignore = true
     }
-  }, [activeStatus, refreshKey])
+  }, [gardenId, activeStatus, refreshKey])
 
   const editModalInitialValues = useMemo(() => {
     if (!editingDemand) return undefined
     return {
       title: editingDemand.title,
       description: editingDemand.description,
-      dueDate: editingDemand.desiredDate,
+      urgency: editingDemand.urgency,
       services: editingDemand.serviceTypeNames
         .map((name) => SERVICE_OPTIONS.find((option) => option.label === name))
         .filter(Boolean),
@@ -120,12 +156,29 @@ export function GardenEditPage() {
     setGarden(updated)
   }
 
+  const handleUploadPhoto = (file) =>
+    uploadGardenPhoto(gardenId, file).then((updated) => {
+      setGarden(updated)
+    })
+
+  const handleDeletePhoto = () =>
+    deleteGardenPhoto(gardenId).then(() => {
+      setGarden((prev) => (prev ? { ...prev, mainPhotoUrl: null } : prev))
+    })
+
   const handleGardenDelete = () => {
     if (!window.confirm('Opravdu chcete smazat tuto zahradu?')) return
 
     deleteGarden(gardenId)
-      .then(() => navigate('/profile'))
-      .catch((err) => setGardenError(err.message || 'Nepodařilo se smazat zahradu'))
+      .then(() => {
+        toast.success('Zahrada smazána')
+        navigate('/profile')
+      })
+      .catch((err) => {
+        const message = err.message || 'Nepodařilo se smazat zahradu'
+        setGardenError(message)
+        toast.error(message)
+      })
   }
 
   const handleCreateDemand = (values) => {
@@ -135,15 +188,18 @@ export function GardenEditPage() {
       title: values.title,
       serviceTypeIds: values.services.map((service) => service.value),
       description: values.description,
-      desiredDate: values.dueDate,
+      urgency: values.urgency,
     })
       .then(() => {
         createModalRef.current?.close()
         setRefreshKey((key) => key + 1)
+        toast.success('Poptávka vytvořena')
         return true
       })
       .catch((err) => {
-        setModalError(err.message || 'Nepodařilo se vytvořit poptávku')
+        const message = err.message || 'Nepodařilo se vytvořit poptávku'
+        setModalError(message)
+        toast.error(message)
         return false
       })
   }
@@ -156,15 +212,18 @@ export function GardenEditPage() {
       title: values.title,
       serviceTypeIds: values.services.map((service) => service.value),
       description: values.description,
-      desiredDate: values.dueDate,
+      urgency: values.urgency,
     })
       .then(() => {
         editModalRef.current?.close()
         setRefreshKey((key) => key + 1)
+        toast.success('Poptávka uložena')
         return true
       })
       .catch((err) => {
-        setModalError(err.message || 'Nepodařilo se uložit poptávku')
+        const message = err.message || 'Nepodařilo se uložit poptávku'
+        setModalError(message)
+        toast.error(message)
         return false
       })
   }
@@ -179,9 +238,12 @@ export function GardenEditPage() {
       .then(() => {
         editModalRef.current?.close()
         setRefreshKey((key) => key + 1)
+        toast.success('Poptávka smazána')
       })
       .catch((err) => {
-        setModalError(err.message || 'Nepodařilo se smazat poptávku')
+        const message = err.message || 'Nepodařilo se smazat poptávku'
+        setModalError(message)
+        toast.error(message)
       })
   }
 
@@ -215,6 +277,8 @@ export function GardenEditPage() {
               initialValues={garden}
               onSubmit={handleGardenSubmit}
               onDelete={handleGardenDelete}
+              onUploadPhoto={handleUploadPhoto}
+              onDeletePhoto={handleDeletePhoto}
             />
           )}
         </section>
@@ -250,7 +314,7 @@ export function GardenEditPage() {
                     <DemandCard
                       gardenName={demand.gardenName}
                       descriptionPreview={demand.descriptionPreview}
-                      desiredDate={demand.desiredDate}
+                      urgencyLabel={demand.urgencyLabel}
                       onClick={() => openEditModal(demand.id)}
                     />
                   </li>
@@ -272,6 +336,7 @@ export function GardenEditPage() {
         mode="create"
         garden={garden}
         serviceOptions={SERVICE_OPTIONS}
+        urgencyOptions={URGENCY_OPTIONS}
         error={modalError}
         onSubmit={handleCreateDemand}
       />
@@ -281,6 +346,7 @@ export function GardenEditPage() {
         mode="edit"
         garden={editingDemand?.garden}
         serviceOptions={SERVICE_OPTIONS}
+        urgencyOptions={URGENCY_OPTIONS}
         initialValues={editModalInitialValues}
         hasProposals={editingDemand?.hasProposals ?? false}
         isLoading={detailLoading}

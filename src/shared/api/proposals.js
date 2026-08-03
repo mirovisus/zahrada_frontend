@@ -1,5 +1,17 @@
 import { apiRequest } from './client'
 
+function buildQuery(params = {}) {
+  const searchParams = new URLSearchParams()
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return
+    searchParams.append(key, value)
+  })
+
+  const query = searchParams.toString()
+  return query ? `?${query}` : ''
+}
+
 export function createProposal(demandId, data) {
   return apiRequest(`/api/demands/${demandId}/proposals`, {
     method: 'POST',
@@ -9,6 +21,10 @@ export function createProposal(demandId, data) {
 
 export function getProposalsByDemand(demandId) {
   return apiRequest(`/api/demands/${demandId}/proposals`)
+}
+
+export function getMyProposals(params = {}) {
+  return apiRequest(`/api/proposals/my${buildQuery(params)}`)
 }
 
 export function acceptProposal(id) {

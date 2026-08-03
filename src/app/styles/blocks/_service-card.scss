@@ -67,6 +67,10 @@
   &--accent {
     background-color: var(--color-green);
     color: var(--color-dark);
+
+    &:hover {
+      border: 1px solid var(--color-accent);
+    }
   }
 
   &__link {
@@ -85,9 +89,5 @@
         color: var(--color-light);
       }
     }
-  }
-
-  &:hover {
-    border: 1px solid var(--color-accent);
   }
 }

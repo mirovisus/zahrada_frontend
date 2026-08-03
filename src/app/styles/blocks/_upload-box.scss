@@ -31,4 +31,20 @@
     z-index: 5;
     background-color: var(--color-light);
   }
+
+  &__remove {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 6;
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+
+    // dorovnání × přesně na střed kulaté podložky (základní .cross-button ho má mírně mimo střed)
+    &::before,
+    &::after {
+      top: calc(50% - 1px);
+      left: 20%;
+    }
+  }
 }

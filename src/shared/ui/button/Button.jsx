@@ -2,6 +2,7 @@ const VARIANT_CLASS = {
   green: 'button--green',
   transparent: 'button--transparent',
   delete: 'button--delete',
+  outline: 'button--outline',
 }
 
 export function Button({

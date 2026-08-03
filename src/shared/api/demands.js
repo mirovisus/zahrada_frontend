@@ -17,12 +17,28 @@ function buildQuery(params = {}) {
   return query ? `?${query}` : ''
 }
 
+let urgenciesCache = null
+
+export function getUrgencies() {
+  if (!urgenciesCache) {
+    urgenciesCache = apiRequest('/api/demands/urgencies').catch((err) => {
+      urgenciesCache = null
+      throw err
+    })
+  }
+  return urgenciesCache
+}
+
 export function getCatalog(params = {}) {
   return apiRequest(`/api/demands/catalog${buildQuery(params)}`)
 }
 
 export function getMyDemands(params = {}) {
   return apiRequest(`/api/demands${buildQuery(params)}`)
+}
+
+export function getDemandsByGarden(gardenId, params = {}) {
+  return apiRequest(`/api/gardens/${gardenId}/demands${buildQuery(params)}`)
 }
 
 export function getDemand(id) {

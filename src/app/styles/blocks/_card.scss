@@ -25,6 +25,39 @@
     gap: 8px;
   }
 
+  &__header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  &__price {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-accent);
+  }
+
+  &__text {
+    color: var(--color-gray);
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    // +6px navíc k .card--proposal .card__content gap (6px) = 2x odstup textu od tlačítek
+    margin-top: 6px;
+
+    @include mobile {
+      flex-direction: column;
+
+      .button {
+        width: 100%;
+      }
+    }
+  }
+
   &-hero{
     @media (max-width: 870px){
       --card-padding: 8px;
@@ -33,6 +66,17 @@
 
     @include mobile {
       text-align: center;
+    }
+  }
+
+  // kompaktnější varianta pro seznamy krátkých karet (např. návrhy na poptávku);
+  // karta leží na stejně bílém pozadí modálu, proto navíc border pro čitelné oddělení
+  &--proposal {
+    --card-padding: 20px;
+    border: var(--border);
+
+    .card__content {
+      gap: 6px;
     }
   }
 }

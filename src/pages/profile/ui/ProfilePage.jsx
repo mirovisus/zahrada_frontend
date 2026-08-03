@@ -1,14 +1,22 @@
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useRef, useState } from 'react'
 import { GardenCard, GardenCardAdd } from '../../../entities/garden'
-import { DemandCard, gardenDemandStatuses } from '../../../entities/demand'
+import { DemandCard, DemandDetails, gardenDemandStatuses } from '../../../entities/demand'
 import { ProposalsModal } from '../../../features/review-proposals'
 import { Field } from '../../../shared/ui/field'
 import { Button } from '../../../shared/ui/button'
 import { Divider } from '../../../shared/ui/divider'
 import { Chip } from '../../../shared/ui/chip'
+import { Pagination } from '../../../shared/ui/pagination'
+import { CrossButton } from '../../../shared/ui/cross-button'
+import { useToast } from '../../../shared/ui/toast'
 import { getGardens } from '../../../shared/api/gardens'
-import { getMyDemands } from '../../../shared/api/demands'
-import { getProposalsByDemand, acceptProposal, rejectProposal } from '../../../shared/api/proposals'
+import { getMyDemands, getDemand } from '../../../shared/api/demands'
+import {
+  getProposalsByDemand,
+  getMyProposals,
+  acceptProposal,
+  rejectProposal,
+} from '../../../shared/api/proposals'
 import { updateOwnerProfile, updateWorkerProfile } from '../../../shared/api/profile'
 import { normalizeFieldErrors } from '../../../shared/api/client'
 import { useAuth } from '../../../shared/auth'
@@ -33,6 +41,29 @@ const ROLE_LABELS = {
   OWNER: 'Vlastník zahrady',
   WORKER: 'Pracovník',
 }
+
+const PROPOSAL_STATUS_LABELS = {
+  NOVY: 'Nový',
+  SCHVALEN: 'Schválen',
+  ZAMITNUT: 'Zamítnut',
+  UPRAVY_POZADOVANY: 'Úpravy požadovány',
+}
+
+// mapuje ProposalStatus na modifikátor chipu definovaný v _chip.scss (chip--nova, chip--schvalena, ...)
+const PROPOSAL_STATUS_CHIP_KEYS = {
+  NOVY: 'nova',
+  SCHVALEN: 'schvalena',
+  ZAMITNUT: 'zruseno',
+  UPRAVY_POZADOVANY: 'ceka-na-platbu',
+}
+
+const proposalStatusFilters = [
+  { value: 'all', label: 'Vše' },
+  { value: 'NOVY', label: PROPOSAL_STATUS_LABELS.NOVY },
+  { value: 'SCHVALEN', label: PROPOSAL_STATUS_LABELS.SCHVALEN },
+  { value: 'ZAMITNUT', label: PROPOSAL_STATUS_LABELS.ZAMITNUT },
+  { value: 'UPRAVY_POZADOVANY', label: PROPOSAL_STATUS_LABELS.UPRAVY_POZADOVANY },
+]
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_REGEX = /^\+420\s?\d{3}\s?\d{3}\s?\d{3}$/
@@ -69,6 +100,7 @@ function validateProfile(values) {
 }
 
 function ProfileCard({ user, profile, isWorker, onSaved }) {
+  const toast = useToast()
   const [values, setValues] = useState(() => buildProfileValues(profile))
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState('')
@@ -109,11 +141,14 @@ function ProfileCard({ user, profile, isWorker, onSaved }) {
       await onSaved()
       setValues((prev) => ({ ...prev, newPassword: '' }))
       setSuccessMessage('Profil byl uložen.')
+      toast.success('Uloženo')
     } catch (error) {
       if (error.fieldErrors) {
         setErrors((prev) => ({ ...prev, ...normalizeFieldErrors(error.fieldErrors) }))
       }
-      setServerError(error.message || 'Uložení profilu se nezdařilo')
+      const message = error.message || 'Uložení profilu se nezdařilo'
+      setServerError(message)
+      toast.error(message)
     } finally {
       setIsSubmitting(false)
     }
@@ -234,8 +269,59 @@ function ProfileCard({ user, profile, isWorker, onSaved }) {
   )
 }
 
+// Detail poptávky, na kterou zahradník podal nabídku, + jeho vlastní nabídka (bez formuláře odezvy)
+const MyProposalDetailModal = forwardRef(function MyProposalDetailModal(
+  { demand, proposal, isLoading = false, error = '' },
+  ref,
+) {
+  const handleBackdropClick = (event) => {
+    if (event.target === event.currentTarget) {
+      event.currentTarget.close()
+    }
+  }
+
+  const handleCloseClick = (event) => {
+    event.currentTarget.closest('dialog')?.close()
+  }
+
+  return (
+    <dialog className="offer-modal" ref={ref} onClick={handleBackdropClick}>
+      <div className="offer-modal__header">
+        <div className="offer-modal__spacer" />
+        <CrossButton className="offer-modal__close" label="Zavřít" onClick={handleCloseClick} />
+      </div>
+
+      {isLoading && <p>Načítání…</p>}
+      {!isLoading && error && <p className="field__error">{error}</p>}
+
+      {!isLoading && !error && demand && proposal && (
+        <div className="offer-modal__layout">
+          <div className="offer-modal__aside">
+            <DemandDetails demand={demand} />
+          </div>
+
+          <div className="offer-modal__content">
+            <h3 className="offer-modal__subtitle h3">Moje nabídka</h3>
+
+            <div className="card__header">
+              <Chip variant="status" status={PROPOSAL_STATUS_CHIP_KEYS[proposal.status]}>
+                {PROPOSAL_STATUS_LABELS[proposal.status] ?? proposal.status}
+              </Chip>
+            </div>
+
+            <p className="card__price">{proposal.price} Kč</p>
+
+            {proposal.description && <p className="offer-modal__text">{proposal.description}</p>}
+          </div>
+        </div>
+      )}
+    </dialog>
+  )
+})
+
 export function ProfilePage() {
   const { user, profile, profileLoading, refreshProfile } = useAuth()
+  const toast = useToast()
   const isWorker = user?.role === 'WORKER'
 
   const [activeStatus, setActiveStatus] = useState('all')
@@ -249,6 +335,19 @@ export function ProfilePage() {
   const [demandsLoading, setDemandsLoading] = useState(true)
   const [demandsError, setDemandsError] = useState('')
 
+  const [myProposalsPage, setMyProposalsPage] = useState(1)
+  const [myProposalStatus, setMyProposalStatus] = useState('all')
+  const [myProposals, setMyProposals] = useState([])
+  const [myProposalsTotalPages, setMyProposalsTotalPages] = useState(0)
+  const [myProposalsLoading, setMyProposalsLoading] = useState(true)
+  const [myProposalsError, setMyProposalsError] = useState('')
+
+  const [selectedProposal, setSelectedProposal] = useState(null)
+  const [selectedProposalDemand, setSelectedProposalDemand] = useState(null)
+  const [proposalDetailLoading, setProposalDetailLoading] = useState(false)
+  const [proposalDetailError, setProposalDetailError] = useState('')
+  const myProposalModalRef = useRef(null)
+
   const [selectedDemand, setSelectedDemand] = useState(null)
   const [proposals, setProposals] = useState([])
   const [proposalsLoading, setProposalsLoading] = useState(false)
@@ -256,6 +355,7 @@ export function ProfilePage() {
   const proposalsModalRef = useRef(null)
 
   useEffect(() => {
+    if (isWorker) return undefined
     let ignore = false
 
     setGardensLoading(true)
@@ -275,7 +375,7 @@ export function ProfilePage() {
     return () => {
       ignore = true
     }
-  }, [])
+  }, [isWorker])
 
   useEffect(() => {
     if (isWorker) return
@@ -299,6 +399,53 @@ export function ProfilePage() {
       ignore = true
     }
   }, [isWorker, activeStatus, demandsRefreshKey])
+
+  useEffect(() => {
+    if (!isWorker) return undefined
+    let ignore = false
+
+    setMyProposalsLoading(true)
+    setMyProposalsError('')
+
+    const status = myProposalStatus === 'all' ? undefined : myProposalStatus
+
+    getMyProposals({ page: myProposalsPage - 1, size: 9, status })
+      .then((page) => {
+        if (ignore) return
+        // backend endpoint /api/proposals/my nemá parametr status, filtrujeme na klientu jako pojistku
+        const content = status ? page.content.filter((proposal) => proposal.status === status) : page.content
+        setMyProposals(content)
+        setMyProposalsTotalPages(page.totalPages)
+      })
+      .catch((error) => {
+        if (!ignore) setMyProposalsError(error.message || 'Nepodařilo se načíst nabídky')
+      })
+      .finally(() => {
+        if (!ignore) setMyProposalsLoading(false)
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [isWorker, myProposalsPage, myProposalStatus])
+
+  const handleMyProposalStatusChange = (value) => {
+    setMyProposalStatus(value)
+    setMyProposalsPage(1)
+  }
+
+  const openMyProposalModal = (proposal) => {
+    setSelectedProposal(proposal)
+    setSelectedProposalDemand(null)
+    setProposalDetailError('')
+    setProposalDetailLoading(true)
+    myProposalModalRef.current?.showModal()
+
+    getDemand(proposal.demandId)
+      .then((data) => setSelectedProposalDemand(data))
+      .catch((error) => setProposalDetailError(error.message || 'Nepodařilo se načíst poptávku'))
+      .finally(() => setProposalDetailLoading(false))
+  }
 
   const loadProposals = (demandId) => {
     setProposalsLoading(true)
@@ -327,8 +474,13 @@ export function ProfilePage() {
       .then(() => {
         loadProposals(selectedDemand.id)
         setDemandsRefreshKey((key) => key + 1)
+        toast.success('Nabídka přijata')
       })
-      .catch((error) => setProposalsError(error.message || 'Návrh se nepodařilo přijmout'))
+      .catch((error) => {
+        const message = error.message || 'Návrh se nepodařilo přijmout'
+        setProposalsError(message)
+        toast.error(message)
+      })
   }
 
   const handleReject = (proposalId) => {
@@ -340,8 +492,13 @@ export function ProfilePage() {
       .then(() => {
         loadProposals(selectedDemand.id)
         setDemandsRefreshKey((key) => key + 1)
+        toast.success('Nabídka zamítnuta')
       })
-      .catch((error) => setProposalsError(error.message || 'Návrh se nepodařilo zamítnout'))
+      .catch((error) => {
+        const message = error.message || 'Návrh se nepodařilo zamítnout'
+        setProposalsError(message)
+        toast.error(message)
+      })
   }
 
   return (
@@ -363,34 +520,35 @@ export function ProfilePage() {
             </p>
           </section>
 
-          <section className="gardens">
-            <h2 className="gardens__title h3">Moje zahrady:</h2>
+          {!isWorker && (
+            <section className="gardens">
+              <h2 className="gardens__title h3">Moje zahrady:</h2>
 
-            {gardensLoading && <p>Načítání zahrad…</p>}
-            {gardensError && <p className="field__error">{gardensError}</p>}
+              {gardensLoading && <p>Načítání zahrad…</p>}
+              {gardensError && <p className="field__error">{gardensError}</p>}
 
-            {!gardensLoading && !gardensError && (
-              <ul className="gardens__list grid grid--3">
-                {gardens.map((garden) => (
-                  <li className="gardens__item" key={garden.id}>
-                    <GardenCard
-                      to={`/garden/${garden.id}`}
-                      mainPhotoUrl={garden.mainPhotoUrl}
-                      gardenName={garden.gardenName}
-                      street={garden.street}
-                      houseNumber={garden.houseNumber}
-                      city={garden.city}
-                    />
+              {!gardensLoading && !gardensError && (
+                <ul className="gardens__list grid grid--3">
+                  {gardens.map((garden) => (
+                    <li className="gardens__item" key={garden.id}>
+                      <GardenCard
+                        id={garden.id}
+                        to={`/garden/${garden.id}`}
+                        mainPhotoUrl={garden.mainPhotoUrl}
+                        gardenName={garden.gardenName}
+                        street={garden.street}
+                        houseNumber={garden.houseNumber}
+                        city={garden.city}
+                      />
+                    </li>
+                  ))}
+
+                  <li className="gardens__item">
+                    <GardenCardAdd to="/garden/new" />
                   </li>
-                ))}
+                </ul>
+              )}
 
-                <li className="gardens__item">
-                  <GardenCardAdd to="/garden/new" />
-                </li>
-              </ul>
-            )}
-
-            {!isWorker && (
               <div className="demand-list demand-list--embedded">
                 <header className="demand-list__header">
                   <h3 className="demand-list__title h3">Seznam poptávek</h3>
@@ -421,7 +579,7 @@ export function ProfilePage() {
                         <DemandCard
                           gardenName={demand.gardenName}
                           descriptionPreview={demand.descriptionPreview}
-                          desiredDate={demand.desiredDate}
+                          urgencyLabel={demand.urgencyLabel}
                           status={{ key: STATUS_CHIP_KEYS[demand.status], label: STATUS_LABELS[demand.status] }}
                           onClick={() => openProposalsModal(demand)}
                         />
@@ -430,8 +588,65 @@ export function ProfilePage() {
                   </ul>
                 )}
               </div>
-            )}
-          </section>
+            </section>
+          )}
+
+          {isWorker && (
+            <div className="demand-list">
+              <header className="demand-list__header">
+                <h2 className="demand-list__title h3">Moje nabídky</h2>
+
+                <nav className="demand-list__filters" aria-label="Filtr stavu nabídek">
+                  {proposalStatusFilters.map((filter) => (
+                    <Chip
+                      key={filter.value}
+                      as="button"
+                      variant={myProposalStatus === filter.value ? 'active' : undefined}
+                      aria-pressed={myProposalStatus === filter.value}
+                      onClick={() => handleMyProposalStatusChange(filter.value)}
+                    >
+                      {filter.label}
+                    </Chip>
+                  ))}
+                </nav>
+              </header>
+
+              {myProposalsLoading && <p>Načítání…</p>}
+              {!myProposalsLoading && myProposalsError && <p className="field__error">{myProposalsError}</p>}
+              {!myProposalsLoading && !myProposalsError && myProposals.length === 0 && (
+                <p>{myProposalStatus === 'all' ? 'Zatím jste nepodali žádnou nabídku' : 'Žádné nabídky nenalezeny'}</p>
+              )}
+
+              {!myProposalsLoading && !myProposalsError && myProposals.length > 0 && (
+                <ul className="demand-list__items">
+                  {myProposals.map((proposal) => (
+                    <li className="demand-list__item" key={proposal.id}>
+                      {/* proposal nemá vlastní kartu - vlastnosti se mapují na existující demand-card sloty (cena -> title, datum -> urgencyLabel) */}
+                      <DemandCard
+                        title={`${proposal.price} Kč`}
+                        descriptionPreview={proposal.description}
+                        urgencyLabel={new Date(proposal.createdAt).toLocaleDateString('cs-CZ')}
+                        status={{
+                          key: PROPOSAL_STATUS_CHIP_KEYS[proposal.status],
+                          label: PROPOSAL_STATUS_LABELS[proposal.status] ?? proposal.status,
+                        }}
+                        onClick={() => openMyProposalModal(proposal)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {!myProposalsLoading && !myProposalsError && myProposalsTotalPages > 1 && (
+                <Pagination
+                  className="demand-list__footer"
+                  currentPage={myProposalsPage}
+                  totalPages={myProposalsTotalPages}
+                  onPageChange={setMyProposalsPage}
+                />
+              )}
+            </div>
+          )}
         </main>
       </div>
 
@@ -443,6 +658,14 @@ export function ProfilePage() {
         error={proposalsError}
         onAccept={handleAccept}
         onReject={handleReject}
+      />
+
+      <MyProposalDetailModal
+        ref={myProposalModalRef}
+        demand={selectedProposalDemand}
+        proposal={selectedProposal}
+        isLoading={proposalDetailLoading}
+        error={proposalDetailError}
       />
     </>
   )

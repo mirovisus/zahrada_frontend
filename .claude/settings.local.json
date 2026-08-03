@@ -2,7 +2,23 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:github.com)",
-      "Bash(openssl rand *)"
+      "Bash(openssl rand *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:8080/v3/api-docs)",
+      "Bash(curl -s http://localhost:8080/v3/api-docs -o /tmp/apidocs.json)",
+      "Bash(python3 -c ' *)",
+      "Bash(mkdir -p \"/c/Users/mirov/AppData/Local/Temp/claude/C--Users-mirov-Documents-DATA-PROJECTS-UNI-II-ROK-rocnikovy-zahrada-frontend/064bb26a-ac73-4368-9ba5-bd38a5eceb2b/scratchpad\")",
+      "Bash(curl -s http://localhost:8080/v3/api-docs -o \"/c/Users/mirov/AppData/Local/Temp/claude/C--Users-mirov-Documents-DATA-PROJECTS-UNI-II-ROK-rocnikovy-zahrada-frontend/064bb26a-ac73-4368-9ba5-bd38a5eceb2b/scratchpad/apidocs.json\")",
+      "Bash(python3 *)",
+      "Bash(/c/Python313/python *)",
+      "Bash(npx eslint *)",
+      "Bash(npx sass *)",
+      "Bash(echo \"exit:$?\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s http://localhost:8080/v3/api-docs -o \"C:\\\\Users\\\\mirov\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-mirov-Documents-DATA-PROJECTS-UNI-II-ROK-rocnikovy-zahrada-frontend\\\\064bb26a-ac73-4368-9ba5-bd38a5eceb2b\\\\scratchpad\\\\apidocs2.json\")",
+      "Bash(curl -s http://localhost:8080/v3/api-docs -o \"C:\\\\Users\\\\mirov\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-mirov-Documents-DATA-PROJECTS-UNI-II-ROK-rocnikovy-zahrada-frontend\\\\064bb26a-ac73-4368-9ba5-bd38a5eceb2b\\\\scratchpad\\\\apidocs3.json\")",
+      "Bash(curl -s http://localhost:8080/v3/api-docs -o \"C:\\\\Users\\\\mirov\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-mirov-Documents-DATA-PROJECTS-UNI-II-ROK-rocnikovy-zahrada-frontend\\\\064bb26a-ac73-4368-9ba5-bd38a5eceb2b\\\\scratchpad\\\\apidocs4.json\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)"
     ]
   }
 }

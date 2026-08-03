@@ -8,7 +8,7 @@ import { GardenCard } from '../../entities/garden'
 const emptyValues = {
   title: '',
   description: '',
-  dueDate: '',
+  urgency: '',
 }
 
 function validate(values, selectedServices) {
@@ -16,7 +16,7 @@ function validate(values, selectedServices) {
 
   if (!values.title.trim()) errors.title = 'Název poptávky je povinný'
   if (selectedServices.length === 0) errors.services = 'Vyberte alespoň jeden typ služby'
-  if (!values.dueDate) errors.dueDate = 'Datum je povinné'
+  if (!values.urgency) errors.urgency = 'Vyberte, kdy potřebujete práci hotovou'
 
   return errors
 }
@@ -47,6 +47,7 @@ export const DemandModal = forwardRef(function DemandModal(
     mode = 'create',
     garden,
     serviceOptions = [],
+    urgencyOptions = [],
     initialValues,
     hasProposals = false,
     isLoading = false,
@@ -129,6 +130,7 @@ export const DemandModal = forwardRef(function DemandModal(
             <div className="demand-modal__aside">
               {garden && (
                 <GardenCard
+                  id={garden.id}
                   mainPhotoUrl={garden.mainPhotoUrl}
                   gardenName={garden.gardenName}
                   street={garden.street}
@@ -223,15 +225,25 @@ export const DemandModal = forwardRef(function DemandModal(
               />
 
               <Field
-                id={`demand-${mode}-date`}
-                name="dueDate"
-                label="Datum"
-                type="date"
-                value={values.dueDate}
+                type="select"
+                id={`demand-${mode}-urgency`}
+                name="urgency"
+                label="Kdy potřebujete práci hotovou"
+                value={values.urgency}
                 onChange={handleChange}
-                error={fieldErrors.dueDate}
+                error={fieldErrors.urgency}
                 disabled={isDisabled}
-              />
+                required
+              >
+                <option value="" disabled>
+                  Kdy potřebujete práci hotovou
+                </option>
+                {urgencyOptions.map((option) => (
+                  <option value={option.value} key={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Field>
 
               {error && <p className="field__error">{error}</p>}
 

@@ -6,7 +6,7 @@ export function AppLayout() {
   return (
     <>
       <ScrollToTop />
-      <Header />
+      <Header layout="app" />
       <Outlet />
     </>
   );

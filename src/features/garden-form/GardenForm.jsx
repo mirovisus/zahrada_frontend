@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Field } from '../../shared/ui/field'
 import { Button } from '../../shared/ui/button'
+import { CrossButton } from '../../shared/ui/cross-button'
+import { useToast } from '../../shared/ui/toast'
 import { normalizeFieldErrors } from '../../shared/api/client'
+import { getUploadUrl } from '../../shared/lib/media'
 
 const emptyValues = {
   gardenName: '',
@@ -14,6 +17,19 @@ const emptyValues = {
 }
 
 const POSTAL_CODE_REGEX = /^\d{3}\s?\d{2}$/
+
+const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024
+
+function validatePhotoFile(file) {
+  if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+    return 'Podporované formáty jsou JPEG, PNG nebo WebP'
+  }
+  if (file.size > MAX_PHOTO_SIZE) {
+    return 'Fotografie může mít maximálně 5 MB'
+  }
+  return null
+}
 
 function validate(values) {
   const errors = {}
@@ -47,14 +63,28 @@ function UploadIcon() {
   )
 }
 
-export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete }) {
+export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete, onUploadPhoto, onDeletePhoto }) {
   const isEdit = mode === 'edit'
+  const toast = useToast()
   const [values, setValues] = useState({ ...emptyValues, ...initialValues })
-  const [photoFile, setPhotoFile] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(initialValues?.mainPhotoUrl || null)
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
+  const [photoError, setPhotoError] = useState('')
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const [isDeletingPhoto, setIsDeletingPhoto] = useState(false)
+
+  const savedPhotoUrl = getUploadUrl(initialValues?.mainPhotoUrl)
+  const previewSrc = photoPreview || savedPhotoUrl
+
+  // uvolní objectURL náhledu při výběru nového souboru / odchodu ze stránky
+  useEffect(() => {
+    if (!photoPreview) return undefined
+    return () => URL.revokeObjectURL(photoPreview)
+  }, [photoPreview])
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -62,13 +92,61 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete 
     setErrors((prev) => ({ ...prev, [name]: undefined }))
   }
 
-  // TODO: backend endpoint chybí - nahrávání souborů není na API implementováno (Garden.mainPhotoUrl),
-  // vybraný soubor se proto jen zobrazí jako náhled a nikam se neodesílá.
   const handlePhotoChange = (event) => {
     const file = event.target.files[0]
+    event.target.value = ''
     if (!file) return
+
+    setPhotoError('')
+
+    // klientská předvalidace jen kvůli UX (nehnat zjevně špatný soubor na server) - hlavní validace je serverová
+    const validationError = validatePhotoFile(file)
+    if (validationError) {
+      setPhotoError(validationError)
+      return
+    }
+
     setPhotoFile(file)
     setPhotoPreview(URL.createObjectURL(file))
+  }
+
+  const handleUploadPhoto = async () => {
+    if (!photoFile) return
+
+    setPhotoError('')
+    setIsUploadingPhoto(true)
+    try {
+      await onUploadPhoto?.(photoFile)
+      setPhotoFile(null)
+      setPhotoPreview(null)
+      toast.success('Fotografie nahrána')
+    } catch (error) {
+      const fieldError = error.fieldErrors ? normalizeFieldErrors(error.fieldErrors).file : undefined
+      const message = fieldError || error.message || 'Nahrání fotografie se nezdařilo'
+      setPhotoError(message)
+      toast.error(message)
+    } finally {
+      setIsUploadingPhoto(false)
+    }
+  }
+
+  const handleDeletePhoto = async () => {
+    if (!window.confirm('Opravdu chcete smazat fotografii zahrady?')) return
+
+    setPhotoError('')
+    setIsDeletingPhoto(true)
+    try {
+      await onDeletePhoto?.()
+      setPhotoFile(null)
+      setPhotoPreview(null)
+      toast.success('Fotografie smazána')
+    } catch (error) {
+      const message = error.message || 'Smazání fotografie se nezdařilo'
+      setPhotoError(message)
+      toast.error(message)
+    } finally {
+      setIsDeletingPhoto(false)
+    }
   }
 
   const handleSubmit = async (event) => {
@@ -81,10 +159,13 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete 
 
     setIsSubmitting(true)
     try {
-      await onSubmit?.({ ...values, photo: photoFile })
+      await onSubmit?.(values)
+      toast.success(isEdit ? 'Zahrada uložena' : 'Zahrada vytvořena')
     } catch (error) {
       if (error.fieldErrors) setErrors((prev) => ({ ...prev, ...normalizeFieldErrors(error.fieldErrors) }))
-      setServerError(error.message || 'Uložení se nezdařilo')
+      const message = error.message || 'Uložení se nezdařilo'
+      setServerError(message)
+      toast.error(message)
     } finally {
       setIsSubmitting(false)
     }
@@ -109,17 +190,18 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete 
                 type="file"
                 id="garden-photo"
                 name="garden_photo"
-                accept="image/png, image/jpeg"
+                accept="image/png, image/jpeg, image/webp"
                 onChange={handlePhotoChange}
+                disabled={isUploadingPhoto || isDeletingPhoto}
               />
 
               <label className="upload-box__label" htmlFor="garden-photo">
                 <img
                   id="preview"
                   className="upload-box__preview"
-                  src={photoPreview || '#'}
+                  src={previewSrc || undefined}
                   alt="Náhled"
-                  style={{ opacity: photoPreview ? 1 : 0 }}
+                  style={{ opacity: previewSrc ? 1 : 0 }}
                 />
 
                 <span className="upload-box__icon-wrapper">
@@ -127,7 +209,33 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete 
                 </span>
                 <span className="upload-box__text">{isEdit ? 'Změnit fotografii' : 'Přidat fotografii zahrady'}</span>
               </label>
+
+              {isEdit && savedPhotoUrl && (
+                <CrossButton
+                  className="upload-box__remove"
+                  type="button"
+                  label="Smazat fotografii"
+                  onClick={handleDeletePhoto}
+                  disabled={isDeletingPhoto}
+                />
+              )}
             </div>
+
+            {photoError && <p className="field__error">{photoError}</p>}
+
+            {isEdit && photoFile && (
+              <div className="garden-form__photo-actions">
+                <Button
+                  variant="green"
+                  type="button"
+                  className="garden-form__upload-photo"
+                  onClick={handleUploadPhoto}
+                  disabled={isUploadingPhoto}
+                >
+                  {isUploadingPhoto ? 'Nahrávání…' : 'Nahrát'}
+                </Button>
+              </div>
+            )}
 
             {isEdit && (
               <Button variant="delete" type="button" className="garden-form__delete" onClick={onDelete}>

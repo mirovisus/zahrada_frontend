@@ -47,11 +47,13 @@ function handleUnauthorized() {
 export async function apiRequest(path, options = {}) {
   const { headers, ...rest } = options
   const token = localStorage.getItem(TOKEN_KEY)
+  // u FormData (upload souboru) necháváme Content-Type na prohlížeči - potřebuje vlastní multipart boundary
+  const isFormData = rest.body instanceof FormData
 
   const response = await fetch(`${BASE_URL}${path}`, {
     ...rest,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },

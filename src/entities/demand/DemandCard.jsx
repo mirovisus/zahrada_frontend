@@ -8,16 +8,13 @@ export function DemandCard({
   preview,
   descriptionPreview,
   city,
-  date,
-  desiredDate,
+  urgencyLabel,
   address,
-  dueDate,
   status,
   onClick,
 }) {
   const cardTitle = gardenName ?? title
   const cardPreview = descriptionPreview ?? preview
-  const cardDate = date ?? desiredDate
 
   return (
     <article className="demand-card" onClick={onClick}>
@@ -48,36 +45,29 @@ export function DemandCard({
 
         {cardPreview && <p className="demand-card__preview">{cardPreview}</p>}
 
-        {dueDate ? (
-          <p className="demand-card__date">
-            <span className="demand-card__date-label">Termín:</span>{' '}
-            <time dateTime={dueDate}>{new Date(dueDate).toLocaleDateString('cs-CZ')}</time>
-          </p>
-        ) : (
-          <div className="demand-card__meta">
-            {address ? (
-              <span className="demand-card__meta-item">
-                <LocationIcon />
-                {address}
-              </span>
-            ) : (
-              <>
-                {city && (
-                  <span className="demand-card__meta-item">
-                    <LocationIcon />
-                    {city}
-                  </span>
-                )}
-                {cardDate && (
-                  <span className="demand-card__meta-item">
-                    <CalendarIcon />
-                    <time dateTime={cardDate}>{new Date(cardDate).toLocaleDateString('cs-CZ')}</time>
-                  </span>
-                )}
-              </>
-            )}
-          </div>
-        )}
+        <div className="demand-card__meta">
+          {address ? (
+            <span className="demand-card__meta-item">
+              <LocationIcon />
+              {address}
+            </span>
+          ) : (
+            <>
+              {city && (
+                <span className="demand-card__meta-item">
+                  <LocationIcon />
+                  {city}
+                </span>
+              )}
+              {urgencyLabel && (
+                <span className="demand-card__meta-item">
+                  <CalendarIcon />
+                  {urgencyLabel}
+                </span>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </article>
   )

@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { CrossButton } from '../../shared/ui/cross-button'
 import { Field } from '../../shared/ui/field'
 import { Button } from '../../shared/ui/button'
@@ -31,7 +32,10 @@ function AttachIcon() {
   )
 }
 
-export const OfferModal = forwardRef(function OfferModal({ demand, isLoading = false, error = '', onSubmit }, ref) {
+export const OfferModal = forwardRef(function OfferModal(
+  { demand, viewerRole = 'GUEST', isLoading = false, error = '', onSubmit },
+  ref,
+) {
   const [values, setValues] = useState(emptyValues)
   const [fieldErrors, setFieldErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -92,61 +96,73 @@ export const OfferModal = forwardRef(function OfferModal({ demand, isLoading = f
             <DemandDetails demand={demand} />
           </div>
 
-          <div className="offer-modal__content">
-            <h3 className="offer-modal__subtitle h3">Vaše nabídka</h3>
+          {viewerRole === 'WORKER' && (
+            <div className="offer-modal__content">
+              <h3 className="offer-modal__subtitle h3">Vaše nabídka</h3>
 
-            <form className="offer-modal__form" onSubmit={handleSubmit}>
-              <div className="offer-modal__field field">
-                <label htmlFor="offer-price" className="field__label visually-hidden">
-                  Cena
-                </label>
-                <div className="offer-modal__price-wrapper">
-                  <input
-                    className="field__input"
-                    id="offer-price"
-                    name="price"
-                    type="number"
-                    min="0"
-                    placeholder="Cena"
-                    value={values.price}
-                    onChange={handleChange}
-                    disabled={isDisabled}
-                  />
-                  <span className="offer-modal__currency">Kč</span>
+              <form className="offer-modal__form" onSubmit={handleSubmit}>
+                <div className="offer-modal__field field">
+                  <label htmlFor="offer-price" className="field__label visually-hidden">
+                    Cena
+                  </label>
+                  <div className="offer-modal__price-wrapper">
+                    <input
+                      className="field__input"
+                      id="offer-price"
+                      name="price"
+                      type="number"
+                      min="0"
+                      placeholder="Cena"
+                      value={values.price}
+                      onChange={handleChange}
+                      disabled={isDisabled}
+                    />
+                    <span className="offer-modal__currency">Kč</span>
+                  </div>
+                  {fieldErrors.price && <p className="field__error">{fieldErrors.price}</p>}
                 </div>
-                {fieldErrors.price && <p className="field__error">{fieldErrors.price}</p>}
-              </div>
 
-              <Field
-                id="offer-description"
-                name="description"
-                label="Popis"
-                placeholder="Popis vaší nabídky..."
-                type="textarea"
-                value={values.description}
-                onChange={handleChange}
-                disabled={isDisabled}
-              />
+                <Field
+                  id="offer-description"
+                  name="description"
+                  label="Popis"
+                  placeholder="Popis vaší nabídky..."
+                  type="textarea"
+                  value={values.description}
+                  onChange={handleChange}
+                  disabled={isDisabled}
+                />
 
-              {/* TODO: backend endpoint chybí - nahrávání dokumentů není na API implementováno
-                  (CreateProposalRequest.documentUrl), tlačítko je proto jen neaktivní placeholder. */}
-              <Button
-                variant="transparent"
-                type="button"
-                icon={<AttachIcon />}
-                className="offer-modal__attach"
-                disabled
-              >
-                Přidat soubor
+                {/* TODO: backend endpoint chybí - nahrávání dokumentů není na API implementováno
+                    (CreateProposalRequest.documentUrl), tlačítko je proto jen neaktivní placeholder. */}
+                <Button
+                  variant="transparent"
+                  type="button"
+                  icon={<AttachIcon />}
+                  className="offer-modal__attach"
+                  disabled
+                >
+                  Přidat soubor
+                </Button>
+
+                {error && <p className="field__error">{error}</p>}
+
+                <Button type="submit" className="offer-modal__submit" disabled={isDisabled}>
+                  {isSubmitting ? 'Odesílání…' : 'Poslat'}
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {viewerRole === 'GUEST' && (
+            <div className="offer-modal__content">
+              <h3 className="offer-modal__subtitle h3">Vaše nabídka</h3>
+              <p className="offer-modal__text">Pro odeslání nabídky se přihlaste</p>
+              <Button as={Link} to="/login" className="offer-modal__submit">
+                Přihlásit se
               </Button>
-
-              {error && <p className="field__error">{error}</p>}
-
-              <Button type="submit" className="offer-modal__submit" disabled={isDisabled}>
-                {isSubmitting ? 'Odesílání…' : 'Poslat'}
-              </Button>
-            </form>
-          </div>
+            </div>
+          )}
         </div>
       )}
     </dialog>

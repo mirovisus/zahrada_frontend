@@ -44,4 +44,15 @@
       border: 1px solid transparent;
     }
   }
+
+  &--outline {
+    color: var(--color-dark);
+    background-color: transparent;
+
+    @include hover {
+      color: var(--color-light);
+      background-color: var(--color-attention);
+      border: 1px solid transparent;
+    }
+  }
 }

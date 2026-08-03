@@ -7,7 +7,7 @@ export function LandingLayout() {
   return (
     <>
       <ScrollToTop />
-      <Header />
+      <Header layout="landing" />
       <Outlet />
       <Footer />
     </>

@@ -21,11 +21,10 @@ export function DemandDetails({ demand }) {
       {demand.description && <p className="offer-modal__text">{demand.description}</p>}
 
       <div className="offer-modal__meta">
-        {demand.desiredDate && (
+        {demand.urgencyLabel && (
           <span className="offer-modal__meta-item">
             <CalendarIcon />
-            Termín:{' '}
-            <time dateTime={demand.desiredDate}>{new Date(demand.desiredDate).toLocaleDateString('cs-CZ')}</time>
+            Naléhavost: {demand.urgencyLabel}
           </span>
         )}
 
