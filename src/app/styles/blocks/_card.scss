@@ -79,4 +79,15 @@
       gap: 6px;
     }
   }
+
+  // přijatý návrh po výběru vlastníkem - zůstává hlavním pracovním prvkem (viz ProposalsModal)
+  &--proposal-accepted {
+    border-color: var(--color-accent);
+    background-color: var(--color-green);
+  }
+
+  // zamítnutý návrh ve sbaleném bloku "Zamítnuté nabídky" - vizuálně ztlumený, ne odstraněný z DOM
+  &--proposal-muted {
+    opacity: 0.6;
+  }
 }

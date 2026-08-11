@@ -4,6 +4,7 @@ import { Field } from '../../shared/ui/field'
 import { Button } from '../../shared/ui/button'
 import { CrossButton } from '../../shared/ui/cross-button'
 import { useToast } from '../../shared/ui/toast'
+import { useConfirm } from '../../shared/ui/confirm'
 import { normalizeFieldErrors } from '../../shared/api/client'
 import { getUploadUrl } from '../../shared/lib/media'
 
@@ -66,6 +67,7 @@ function UploadIcon() {
 export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete, onUploadPhoto, onDeletePhoto }) {
   const isEdit = mode === 'edit'
   const toast = useToast()
+  const confirm = useConfirm()
   const [values, setValues] = useState({ ...emptyValues, ...initialValues })
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState('')
@@ -131,7 +133,13 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete,
   }
 
   const handleDeletePhoto = async () => {
-    if (!window.confirm('Opravdu chcete smazat fotografii zahrady?')) return
+    const ok = await confirm({
+      title: 'Smazat fotografii',
+      message: 'Opravdu chcete smazat fotografii zahrady?',
+      confirmLabel: 'Smazat',
+      variant: 'danger',
+    })
+    if (!ok) return
 
     setPhotoError('')
     setIsDeletingPhoto(true)

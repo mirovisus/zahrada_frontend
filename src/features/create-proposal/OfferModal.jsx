@@ -33,17 +33,35 @@ function AttachIcon() {
 }
 
 export const OfferModal = forwardRef(function OfferModal(
-  { demand, viewerRole = 'GUEST', isLoading = false, error = '', onSubmit },
+  {
+    demand,
+    viewerRole = 'GUEST',
+    isLoading = false,
+    error = '',
+    onSubmit,
+    initialValues = emptyValues,
+    serverFieldErrors = {},
+    title = 'Vaše nabídka',
+    submitLabel = 'Poslat',
+  },
   ref,
 ) {
-  const [values, setValues] = useState(emptyValues)
+  const [values, setValues] = useState(initialValues)
   const [fieldErrors, setFieldErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    setValues(emptyValues)
+    setValues(initialValues)
     setFieldErrors({})
-  }, [demand])
+  }, [demand, initialValues])
+
+  // externí (serverové) chyby polí sloučíme do stejného stavu jako klientskou validaci,
+  // aby je handleChange níže standardně smazal při další úpravě pole
+  useEffect(() => {
+    if (Object.keys(serverFieldErrors).length > 0) {
+      setFieldErrors((prev) => ({ ...prev, ...serverFieldErrors }))
+    }
+  }, [serverFieldErrors])
 
   const handleChange = (event) => {
     const { name, value } = event.target
@@ -98,7 +116,7 @@ export const OfferModal = forwardRef(function OfferModal(
 
           {viewerRole === 'WORKER' && (
             <div className="offer-modal__content">
-              <h3 className="offer-modal__subtitle h3">Vaše nabídka</h3>
+              <h3 className="offer-modal__subtitle h3">{title}</h3>
 
               <form className="offer-modal__form" onSubmit={handleSubmit}>
                 <div className="offer-modal__field field">
@@ -148,7 +166,7 @@ export const OfferModal = forwardRef(function OfferModal(
                 {error && <p className="field__error">{error}</p>}
 
                 <Button type="submit" className="offer-modal__submit" disabled={isDisabled}>
-                  {isSubmitting ? 'Odesílání…' : 'Poslat'}
+                  {isSubmitting ? 'Odesílání…' : submitLabel}
                 </Button>
               </form>
             </div>

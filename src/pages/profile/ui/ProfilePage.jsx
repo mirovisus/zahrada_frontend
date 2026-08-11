@@ -1,7 +1,11 @@
-import { forwardRef, useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { GardenCard, GardenCardAdd } from '../../../entities/garden'
-import { DemandCard, DemandDetails, gardenDemandStatuses } from '../../../entities/demand'
+import { DemandCard, DemandDetails, gardenDemandStatuses, demandStatusLabels, demandStatusChipKeys } from '../../../entities/demand'
+import { proposalStatusLabels, proposalStatusChipKeys, proposalStatusFilters } from '../../../entities/proposal'
 import { ProposalsModal } from '../../../features/review-proposals'
+import { OfferModal } from '../../../features/create-proposal'
+import { WorkReportModal } from '../../../features/submit-work-report'
 import { Field } from '../../../shared/ui/field'
 import { Button } from '../../../shared/ui/button'
 import { Divider } from '../../../shared/ui/divider'
@@ -10,60 +14,28 @@ import { Pagination } from '../../../shared/ui/pagination'
 import { CrossButton } from '../../../shared/ui/cross-button'
 import { useToast } from '../../../shared/ui/toast'
 import { getGardens } from '../../../shared/api/gardens'
-import { getMyDemands, getDemand } from '../../../shared/api/demands'
+import { getMyDemands, getDemand, payDemand, acceptWork } from '../../../shared/api/demands'
 import {
   getProposalsByDemand,
   getMyProposals,
   acceptProposal,
   rejectProposal,
+  requestProposalChanges,
+  updateProposal,
 } from '../../../shared/api/proposals'
-import { updateOwnerProfile, updateWorkerProfile } from '../../../shared/api/profile'
+import { deleteAccount, updateOwnerProfile, updateWorkerProfile } from '../../../shared/api/profile'
+import { getWorkerJobs, submitWorkReport } from '../../../shared/api/workReports'
 import { normalizeFieldErrors } from '../../../shared/api/client'
 import { useAuth } from '../../../shared/auth'
+import { useConfirm } from '../../../shared/ui/confirm'
 
-const STATUS_LABELS = gardenDemandStatuses.reduce((labels, filter) => {
-  if (filter.value !== 'all') labels[filter.value] = filter.label
-  return labels
-}, {})
-
-// mapuje DemandStatus na modifikátor chipu definovaný v _chip.scss (chip--nova, chip--schvalena, ...)
-const STATUS_CHIP_KEYS = {
-  NOVA: 'nova',
-  SCHVALENA: 'schvalena',
-  CEKA_NA_PLATBU: 'ceka-na-platbu',
-  ZAPLACENA: 'zaplaceno',
-  PRACE_DOKONCENY: 'dokonceno',
-  PRACE_SCHVALENY: 'dokonceno',
-  ZRUSENA: 'zruseno',
-}
+const STATUS_LABELS = demandStatusLabels
+const STATUS_CHIP_KEYS = demandStatusChipKeys
 
 const ROLE_LABELS = {
   OWNER: 'Vlastník zahrady',
   WORKER: 'Pracovník',
 }
-
-const PROPOSAL_STATUS_LABELS = {
-  NOVY: 'Nový',
-  SCHVALEN: 'Schválen',
-  ZAMITNUT: 'Zamítnut',
-  UPRAVY_POZADOVANY: 'Úpravy požadovány',
-}
-
-// mapuje ProposalStatus na modifikátor chipu definovaný v _chip.scss (chip--nova, chip--schvalena, ...)
-const PROPOSAL_STATUS_CHIP_KEYS = {
-  NOVY: 'nova',
-  SCHVALEN: 'schvalena',
-  ZAMITNUT: 'zruseno',
-  UPRAVY_POZADOVANY: 'ceka-na-platbu',
-}
-
-const proposalStatusFilters = [
-  { value: 'all', label: 'Vše' },
-  { value: 'NOVY', label: PROPOSAL_STATUS_LABELS.NOVY },
-  { value: 'SCHVALEN', label: PROPOSAL_STATUS_LABELS.SCHVALEN },
-  { value: 'ZAMITNUT', label: PROPOSAL_STATUS_LABELS.ZAMITNUT },
-  { value: 'UPRAVY_POZADOVANY', label: PROPOSAL_STATUS_LABELS.UPRAVY_POZADOVANY },
-]
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_REGEX = /^\+420\s?\d{3}\s?\d{3}\s?\d{3}$/
@@ -101,11 +73,15 @@ function validateProfile(values) {
 
 function ProfileCard({ user, profile, isWorker, onSaved }) {
   const toast = useToast()
+  const confirm = useConfirm()
+  const navigate = useNavigate()
+  const { logout } = useAuth()
   const [values, setValues] = useState(() => buildProfileValues(profile))
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleProfileChange = (event) => {
     const { name, value } = event.target
@@ -154,9 +130,26 @@ function ProfileCard({ user, profile, isWorker, onSaved }) {
     }
   }
 
-  const handleDeleteAccount = () => {
-    // TODO: backend endpoint chybí - smazání účtu není na API implementováno
-    console.log('delete account')
+  const handleDeleteAccount = async () => {
+    const ok = await confirm({
+      title: 'Smazat účet',
+      message: 'Opravdu chcete smazat svůj účet? Tato akce je nevratná a všechna vaše data budou odstraněna.',
+      confirmLabel: 'Smazat účet',
+      variant: 'danger',
+    })
+    if (!ok) return
+
+    setIsDeleting(true)
+    deleteAccount()
+      .then(() => {
+        toast.success('Účet byl smazán')
+        logout()
+        navigate('/')
+      })
+      .catch((error) => {
+        toast.error(error.message || 'Smazání účtu se nezdařilo')
+      })
+      .finally(() => setIsDeleting(false))
   }
 
   return (
@@ -174,6 +167,11 @@ function ProfileCard({ user, profile, isWorker, onSaved }) {
         <div className="profile-card__info">
           <p className="profile-card__name h4">{profile.firstName}</p>
           <p className="profile-card__role">{ROLE_LABELS[user.role]}</p>
+          {isWorker && (
+            <p className="profile-card__rating">
+              {profile.averageRating != null ? `★ ${profile.averageRating.toFixed(1)}` : 'Zatím bez hodnocení'}
+            </p>
+          )}
         </div>
       </div>
 
@@ -260,8 +258,8 @@ function ProfileCard({ user, profile, isWorker, onSaved }) {
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Ukládání…' : 'Uložit'}
           </Button>
-          <Button variant="delete" type="button" onClick={handleDeleteAccount}>
-            Smazat účet
+          <Button variant="delete" type="button" onClick={handleDeleteAccount} disabled={isDeleting}>
+            {isDeleting ? 'Mazání…' : 'Smazat účet'}
           </Button>
         </div>
       </form>
@@ -271,7 +269,7 @@ function ProfileCard({ user, profile, isWorker, onSaved }) {
 
 // Detail poptávky, na kterou zahradník podal nabídku, + jeho vlastní nabídka (bez formuláře odezvy)
 const MyProposalDetailModal = forwardRef(function MyProposalDetailModal(
-  { demand, proposal, isLoading = false, error = '' },
+  { demand, proposal, isLoading = false, error = '', onEdit },
   ref,
 ) {
   const handleBackdropClick = (event) => {
@@ -304,14 +302,32 @@ const MyProposalDetailModal = forwardRef(function MyProposalDetailModal(
             <h3 className="offer-modal__subtitle h3">Moje nabídka</h3>
 
             <div className="card__header">
-              <Chip variant="status" status={PROPOSAL_STATUS_CHIP_KEYS[proposal.status]}>
-                {PROPOSAL_STATUS_LABELS[proposal.status] ?? proposal.status}
+              <Chip variant="status" status={proposalStatusChipKeys[proposal.status]}>
+                {proposalStatusLabels[proposal.status] ?? proposal.status}
               </Chip>
             </div>
 
             <p className="card__price">{proposal.price} Kč</p>
 
             {proposal.description && <p className="offer-modal__text">{proposal.description}</p>}
+
+            {proposal.status === 'UPRAVY_POZADOVANY' && proposal.comments?.length > 0 && (
+              <>
+                <h4 className="offer-modal__subtitle h4">Komentáře vlastníka</h4>
+                {[...proposal.comments].reverse().map((comment, index) => (
+                  <p className="offer-modal__text" key={index}>
+                    {comment.text}{' '}
+                    <small>({new Date(comment.createdAt).toLocaleDateString('cs-CZ')})</small>
+                  </p>
+                ))}
+              </>
+            )}
+
+            {proposal.status === 'UPRAVY_POZADOVANY' && (
+              <Button type="button" onClick={() => onEdit?.(proposal)}>
+                Upravit návrh
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -322,6 +338,7 @@ const MyProposalDetailModal = forwardRef(function MyProposalDetailModal(
 export function ProfilePage() {
   const { user, profile, profileLoading, refreshProfile } = useAuth()
   const toast = useToast()
+  const confirm = useConfirm()
   const isWorker = user?.role === 'WORKER'
 
   const [activeStatus, setActiveStatus] = useState('all')
@@ -333,13 +350,24 @@ export function ProfilePage() {
 
   const [demands, setDemands] = useState([])
   const [demandsLoading, setDemandsLoading] = useState(true)
+  const [demandsLoadedOnce, setDemandsLoadedOnce] = useState(false)
   const [demandsError, setDemandsError] = useState('')
+
+  const [jobs, setJobs] = useState([])
+  const [jobsLoading, setJobsLoading] = useState(true)
+  const [jobsError, setJobsError] = useState('')
+
+  const [selectedJob, setSelectedJob] = useState(null)
+  const [reportError, setReportError] = useState('')
+  const [reportFieldErrors, setReportFieldErrors] = useState({})
+  const workReportModalRef = useRef(null)
 
   const [myProposalsPage, setMyProposalsPage] = useState(1)
   const [myProposalStatus, setMyProposalStatus] = useState('all')
   const [myProposals, setMyProposals] = useState([])
   const [myProposalsTotalPages, setMyProposalsTotalPages] = useState(0)
   const [myProposalsLoading, setMyProposalsLoading] = useState(true)
+  const [myProposalsLoadedOnce, setMyProposalsLoadedOnce] = useState(false)
   const [myProposalsError, setMyProposalsError] = useState('')
 
   const [selectedProposal, setSelectedProposal] = useState(null)
@@ -348,10 +376,26 @@ export function ProfilePage() {
   const [proposalDetailError, setProposalDetailError] = useState('')
   const myProposalModalRef = useRef(null)
 
+  const [editingProposal, setEditingProposal] = useState(null)
+  const [editModalError, setEditModalError] = useState('')
+  const [editServerFieldErrors, setEditServerFieldErrors] = useState({})
+  const editProposalModalRef = useRef(null)
+
+  const editInitialValues = useMemo(
+    () =>
+      editingProposal
+        ? { price: String(editingProposal.price ?? ''), description: editingProposal.description ?? '' }
+        : { price: '', description: '' },
+    [editingProposal],
+  )
+
   const [selectedDemand, setSelectedDemand] = useState(null)
   const [proposals, setProposals] = useState([])
   const [proposalsLoading, setProposalsLoading] = useState(false)
   const [proposalsError, setProposalsError] = useState('')
+  const [payLoading, setPayLoading] = useState(false)
+  const [acceptWorkError, setAcceptWorkError] = useState('')
+  const [acceptWorkFieldErrors, setAcceptWorkFieldErrors] = useState({})
   const proposalsModalRef = useRef(null)
 
   useEffect(() => {
@@ -392,13 +436,19 @@ export function ProfilePage() {
         if (!ignore) setDemandsError(error.message || 'Nepodařilo se načíst poptávky')
       })
       .finally(() => {
-        if (!ignore) setDemandsLoading(false)
+        if (!ignore) {
+          setDemandsLoading(false)
+          setDemandsLoadedOnce(true)
+        }
       })
 
     return () => {
       ignore = true
     }
   }, [isWorker, activeStatus, demandsRefreshKey])
+
+  const demandsShowContent = demandsLoadedOnce || !demandsLoading
+  const demandsRefreshing = demandsLoading && demandsLoadedOnce
 
   useEffect(() => {
     if (!isWorker) return undefined
@@ -421,13 +471,76 @@ export function ProfilePage() {
         if (!ignore) setMyProposalsError(error.message || 'Nepodařilo se načíst nabídky')
       })
       .finally(() => {
-        if (!ignore) setMyProposalsLoading(false)
+        if (!ignore) {
+          setMyProposalsLoading(false)
+          setMyProposalsLoadedOnce(true)
+        }
       })
 
     return () => {
       ignore = true
     }
   }, [isWorker, myProposalsPage, myProposalStatus])
+
+  const myProposalsShowContent = myProposalsLoadedOnce || !myProposalsLoading
+  const myProposalsRefreshing = myProposalsLoading && myProposalsLoadedOnce
+
+  useEffect(() => {
+    if (!isWorker) return undefined
+    let ignore = false
+
+    setJobsLoading(true)
+    setJobsError('')
+
+    getWorkerJobs()
+      .then((data) => {
+        if (!ignore) setJobs(data)
+      })
+      .catch((error) => {
+        if (!ignore) setJobsError(error.message || 'Nepodařilo se načíst zakázky')
+      })
+      .finally(() => {
+        if (!ignore) setJobsLoading(false)
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [isWorker])
+
+  const openJobModal = (job) => {
+    setSelectedJob(job)
+    setReportError('')
+    setReportFieldErrors({})
+    workReportModalRef.current?.showModal()
+  }
+
+  const handleSubmitReport = (values) => {
+    if (!selectedJob) return Promise.resolve(false)
+    setReportError('')
+    setReportFieldErrors({})
+
+    return submitWorkReport(selectedJob.demandId, values)
+      .then(() => {
+        workReportModalRef.current?.close()
+        toast.success('Report byl odeslán')
+        setJobs((prev) =>
+          prev.map((job) =>
+            job.demandId === selectedJob.demandId
+              ? { ...job, status: 'PRACE_DOKONCENY', reportSubmitted: true }
+              : job,
+          ),
+        )
+        return true
+      })
+      .catch((error) => {
+        if (error.fieldErrors) setReportFieldErrors(normalizeFieldErrors(error.fieldErrors))
+        const message = error.message || 'Report se nepodařilo odeslat'
+        setReportError(message)
+        toast.error(message)
+        return false
+      })
+  }
 
   const handleMyProposalStatusChange = (value) => {
     setMyProposalStatus(value)
@@ -447,6 +560,36 @@ export function ProfilePage() {
       .finally(() => setProposalDetailLoading(false))
   }
 
+  const openEditProposal = (proposal) => {
+    myProposalModalRef.current?.close()
+    setEditingProposal(proposal)
+    setEditModalError('')
+    setEditServerFieldErrors({})
+    editProposalModalRef.current?.showModal()
+  }
+
+  const handleProposalEditSubmit = (values) => {
+    if (!editingProposal) return false
+    setEditModalError('')
+    setEditServerFieldErrors({})
+
+    return updateProposal(editingProposal.id, values)
+      .then((updated) => {
+        editProposalModalRef.current?.close()
+        toast.success('Návrh byl upraven')
+        setMyProposals((prev) => prev.map((item) => (item.id === updated.id ? updated : item)))
+        if (selectedProposal?.id === updated.id) setSelectedProposal(updated)
+        return true
+      })
+      .catch((error) => {
+        if (error.fieldErrors) setEditServerFieldErrors(normalizeFieldErrors(error.fieldErrors))
+        const message = error.message || 'Návrh se nepodařilo upravit'
+        setEditModalError(message)
+        toast.error(message)
+        return false
+      })
+  }
+
   const loadProposals = (demandId) => {
     setProposalsLoading(true)
     setProposalsError('')
@@ -457,17 +600,32 @@ export function ProfilePage() {
       .finally(() => setProposalsLoading(false))
   }
 
+  const loadDemandDetail = (demandId) => {
+    getDemand(demandId)
+      .then((data) => setSelectedDemand((prev) => (prev ? { ...prev, ...data } : data)))
+      .catch(() => {})
+  }
+
   const openProposalsModal = (demand) => {
     setSelectedDemand(demand)
     setProposals([])
     setProposalsError('')
+    setAcceptWorkError('')
+    setAcceptWorkFieldErrors({})
     proposalsModalRef.current?.showModal()
     loadProposals(demand.id)
+    loadDemandDetail(demand.id)
   }
 
-  const handleAccept = (proposalId) => {
+  const handleAccept = async (proposalId) => {
     if (!selectedDemand) return
-    if (!window.confirm('Opravdu chcete přijmout tento návrh? Ostatní návrhy budou zamítnuty.')) return
+    const ok = await confirm({
+      title: 'Přijmout návrh',
+      message: 'Opravdu chcete přijmout tento návrh? Ostatní návrhy budou zamítnuty.',
+      confirmLabel: 'Přijmout',
+      variant: 'default',
+    })
+    if (!ok) return
 
     setProposalsError('')
     acceptProposal(proposalId)
@@ -483,9 +641,15 @@ export function ProfilePage() {
       })
   }
 
-  const handleReject = (proposalId) => {
+  const handleReject = async (proposalId) => {
     if (!selectedDemand) return
-    if (!window.confirm('Opravdu chcete zamítnout tento návrh?')) return
+    const ok = await confirm({
+      title: 'Zamítnout návrh',
+      message: 'Opravdu chcete zamítnout tento návrh?',
+      confirmLabel: 'Zamítnout',
+      variant: 'danger',
+    })
+    if (!ok) return
 
     setProposalsError('')
     rejectProposal(proposalId)
@@ -498,6 +662,57 @@ export function ProfilePage() {
         const message = error.message || 'Návrh se nepodařilo zamítnout'
         setProposalsError(message)
         toast.error(message)
+      })
+  }
+
+  const handleRequestChanges = (proposalId, comment) => {
+    if (!selectedDemand) return Promise.reject(new Error('Poptávka nenalezena'))
+
+    return requestProposalChanges(proposalId, { comment })
+      .then(() => {
+        loadProposals(selectedDemand.id)
+        toast.success('Žádost o úpravy byla odeslána')
+      })
+      .catch((error) => {
+        toast.error(error.message || 'Žádost o úpravy se nepodařila')
+        throw error
+      })
+  }
+
+  const handlePay = () => {
+    if (!selectedDemand) return
+
+    setPayLoading(true)
+    payDemand(selectedDemand.id)
+      .then((updated) => {
+        setSelectedDemand((prev) => (prev ? { ...prev, status: updated.status } : prev))
+        setDemandsRefreshKey((key) => key + 1)
+        toast.success('Poptávka byla zaplacena')
+      })
+      .catch((error) => {
+        toast.error(error.message || 'Platbu se nepodařilo provést')
+      })
+      .finally(() => setPayLoading(false))
+  }
+
+  const handleAcceptWork = (values) => {
+    if (!selectedDemand) return Promise.resolve(false)
+    setAcceptWorkError('')
+    setAcceptWorkFieldErrors({})
+
+    return acceptWork(selectedDemand.id, values)
+      .then((updated) => {
+        setSelectedDemand((prev) => (prev ? { ...prev, ...updated } : updated))
+        setDemandsRefreshKey((key) => key + 1)
+        toast.success('Práce byla přijata a ohodnocena')
+        return true
+      })
+      .catch((error) => {
+        if (error.fieldErrors) setAcceptWorkFieldErrors(normalizeFieldErrors(error.fieldErrors))
+        const message = error.message || 'Práci se nepodařilo přijmout'
+        setAcceptWorkError(message)
+        toast.error(message)
+        return false
       })
   }
 
@@ -568,27 +783,62 @@ export function ProfilePage() {
                   </nav>
                 </header>
 
-                {demandsLoading && <p>Načítání…</p>}
-                {!demandsLoading && demandsError && <p className="field__error">{demandsError}</p>}
-                {!demandsLoading && !demandsError && demands.length === 0 && <p>Žádné poptávky nenalezeny</p>}
+                <div className="demand-list__body">
+                  <div className={`demand-list__content${demandsRefreshing ? ' demand-list__content--loading' : ''}`}>
+                    {!demandsShowContent && <p>Načítání…</p>}
+                    {demandsShowContent && demandsError && <p className="field__error">{demandsError}</p>}
+                    {demandsShowContent && !demandsError && demands.length === 0 && <p>Žádné poptávky nenalezeny</p>}
 
-                {!demandsLoading && !demandsError && demands.length > 0 && (
-                  <ul className="demand-list__items">
-                    {demands.map((demand) => (
-                      <li className="demand-list__item" key={demand.id}>
-                        <DemandCard
-                          gardenName={demand.gardenName}
-                          descriptionPreview={demand.descriptionPreview}
-                          urgencyLabel={demand.urgencyLabel}
-                          status={{ key: STATUS_CHIP_KEYS[demand.status], label: STATUS_LABELS[demand.status] }}
-                          onClick={() => openProposalsModal(demand)}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                    {demandsShowContent && !demandsError && demands.length > 0 && (
+                      <ul className="demand-list__items">
+                        {demands.map((demand) => (
+                          <li className="demand-list__item" key={demand.id}>
+                            <DemandCard
+                              gardenName={demand.gardenName}
+                              descriptionPreview={demand.descriptionPreview}
+                              urgencyLabel={demand.urgencyLabel}
+                              status={{ key: STATUS_CHIP_KEYS[demand.status], label: STATUS_LABELS[demand.status] }}
+                              onClick={() => openProposalsModal(demand)}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {demandsRefreshing && <span className="demand-list__spinner" aria-hidden="true" />}
+                </div>
               </div>
             </section>
+          )}
+
+          {isWorker && (
+            <div className="demand-list">
+              <header className="demand-list__header">
+                <h2 className="demand-list__title h3">Moje zakázky</h2>
+              </header>
+
+              {jobsLoading && <p>Načítání…</p>}
+              {!jobsLoading && jobsError && <p className="field__error">{jobsError}</p>}
+              {!jobsLoading && !jobsError && jobs.length === 0 && <p>Zatím nemáte žádné aktivní zakázky</p>}
+
+              {!jobsLoading && !jobsError && jobs.length > 0 && (
+                <ul className="demand-list__items">
+                  {jobs.map((job) => (
+                    <li className="demand-list__item" key={job.demandId}>
+                      <DemandCard
+                        title={job.title}
+                        price={job.price}
+                        city={[job.garden?.gardenName, job.garden?.city].filter(Boolean).join(', ')}
+                        urgencyLabel={new Date(job.createdAt).toLocaleDateString('cs-CZ')}
+                        status={{ key: STATUS_CHIP_KEYS[job.status], label: STATUS_LABELS[job.status] }}
+                        onClick={() => openJobModal(job)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
 
           {isWorker && (
@@ -611,33 +861,39 @@ export function ProfilePage() {
                 </nav>
               </header>
 
-              {myProposalsLoading && <p>Načítání…</p>}
-              {!myProposalsLoading && myProposalsError && <p className="field__error">{myProposalsError}</p>}
-              {!myProposalsLoading && !myProposalsError && myProposals.length === 0 && (
-                <p>{myProposalStatus === 'all' ? 'Zatím jste nepodali žádnou nabídku' : 'Žádné nabídky nenalezeny'}</p>
-              )}
+              <div className="demand-list__body">
+                <div className={`demand-list__content${myProposalsRefreshing ? ' demand-list__content--loading' : ''}`}>
+                  {!myProposalsShowContent && <p>Načítání…</p>}
+                  {myProposalsShowContent && myProposalsError && <p className="field__error">{myProposalsError}</p>}
+                  {myProposalsShowContent && !myProposalsError && myProposals.length === 0 && (
+                    <p>{myProposalStatus === 'all' ? 'Zatím jste nepodali žádnou nabídku' : 'Žádné nabídky nenalezeny'}</p>
+                  )}
 
-              {!myProposalsLoading && !myProposalsError && myProposals.length > 0 && (
-                <ul className="demand-list__items">
-                  {myProposals.map((proposal) => (
-                    <li className="demand-list__item" key={proposal.id}>
-                      {/* proposal nemá vlastní kartu - vlastnosti se mapují na existující demand-card sloty (cena -> title, datum -> urgencyLabel) */}
-                      <DemandCard
-                        title={`${proposal.price} Kč`}
-                        descriptionPreview={proposal.description}
-                        urgencyLabel={new Date(proposal.createdAt).toLocaleDateString('cs-CZ')}
-                        status={{
-                          key: PROPOSAL_STATUS_CHIP_KEYS[proposal.status],
-                          label: PROPOSAL_STATUS_LABELS[proposal.status] ?? proposal.status,
-                        }}
-                        onClick={() => openMyProposalModal(proposal)}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
+                  {myProposalsShowContent && !myProposalsError && myProposals.length > 0 && (
+                    <ul className="demand-list__items">
+                      {myProposals.map((proposal) => (
+                        <li className="demand-list__item" key={proposal.id}>
+                          {/* proposal nemá vlastní kartu - vlastnosti se mapují na existující demand-card sloty (cena -> title, datum -> urgencyLabel) */}
+                          <DemandCard
+                            title={`${proposal.price} Kč`}
+                            descriptionPreview={proposal.description}
+                            urgencyLabel={new Date(proposal.createdAt).toLocaleDateString('cs-CZ')}
+                            status={{
+                              key: proposalStatusChipKeys[proposal.status],
+                              label: proposalStatusLabels[proposal.status] ?? proposal.status,
+                            }}
+                            onClick={() => openMyProposalModal(proposal)}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
 
-              {!myProposalsLoading && !myProposalsError && myProposalsTotalPages > 1 && (
+                {myProposalsRefreshing && <span className="demand-list__spinner" aria-hidden="true" />}
+              </div>
+
+              {myProposalsShowContent && !myProposalsError && myProposalsTotalPages > 1 && (
                 <Pagination
                   className="demand-list__footer"
                   currentPage={myProposalsPage}
@@ -658,6 +914,12 @@ export function ProfilePage() {
         error={proposalsError}
         onAccept={handleAccept}
         onReject={handleReject}
+        onRequestChanges={handleRequestChanges}
+        onPay={handlePay}
+        payLoading={payLoading}
+        onAcceptWork={handleAcceptWork}
+        acceptWorkError={acceptWorkError}
+        acceptWorkFieldErrors={acceptWorkFieldErrors}
       />
 
       <MyProposalDetailModal
@@ -666,6 +928,27 @@ export function ProfilePage() {
         proposal={selectedProposal}
         isLoading={proposalDetailLoading}
         error={proposalDetailError}
+        onEdit={openEditProposal}
+      />
+
+      <OfferModal
+        ref={editProposalModalRef}
+        demand={selectedProposalDemand}
+        viewerRole="WORKER"
+        error={editModalError}
+        onSubmit={handleProposalEditSubmit}
+        initialValues={editInitialValues}
+        serverFieldErrors={editServerFieldErrors}
+        title="Upravit návrh"
+        submitLabel="Uložit"
+      />
+
+      <WorkReportModal
+        ref={workReportModalRef}
+        job={selectedJob}
+        error={reportError}
+        serverFieldErrors={reportFieldErrors}
+        onSubmit={handleSubmitReport}
       />
     </>
   )

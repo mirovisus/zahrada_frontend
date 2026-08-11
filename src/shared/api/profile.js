@@ -17,3 +17,9 @@ export function updateWorkerProfile(data) {
     body: JSON.stringify(data),
   })
 }
+
+export function deleteAccount() {
+  return apiRequest('/api/profile', {
+    method: 'DELETE',
+  })
+}

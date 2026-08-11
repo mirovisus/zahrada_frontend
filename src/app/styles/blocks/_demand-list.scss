@@ -36,6 +36,56 @@
         list-style: none;
     }
 
+    // obálka pro list/prázdný stav/chybu při serverovém filtrování - drží místo a nese přiblednutí + spinner při přenačítání, aby se stránka "neseknula"
+    &__body {
+        position: relative;
+        min-height: 96px;
+    }
+
+    &__content {
+        transition: opacity var(--transition-duration) ease;
+
+        &--loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    }
+
+    &__spinner {
+        @include square(20px);
+
+        position: absolute;
+        top: 0;
+        right: 0;
+        border: 3px solid var(--color-lightgray);
+        border-top-color: var(--color-accent);
+        border-radius: 50%;
+        animation: demand-list-spin 0.6s linear infinite;
+    }
+
+    // sbalený blok zamítnutých návrhů v ProposalsModal, jakmile vlastník vybral jiný návrh
+    &__rejected {
+      margin-top: 12px;
+    }
+
+    &__rejected-toggle {
+      @include reset-button;
+      @include fluid-text(14, 12);
+
+      color: var(--color-dark);
+      text-decoration: underline;
+      cursor: pointer;
+      transition: color var(--transition-duration) ease;
+
+      @include hover {
+        color: var(--color-accent);
+      }
+    }
+
+    &__rejected-list {
+      margin-top: 12px;
+    }
+
     &__footer {
       margin-top: 24px;
       display: flex;
@@ -52,6 +102,12 @@
             width: 100%;
         }
       }
+    }
+}
+
+@keyframes demand-list-spin {
+    to {
+        transform: rotate(360deg);
     }
 }
 

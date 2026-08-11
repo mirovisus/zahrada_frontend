@@ -1,3 +1,3 @@
 export { DemandCard } from './DemandCard'
 export { DemandDetails } from './DemandDetails'
-export { gardenDemandStatuses } from './model/demandStatuses'
+export { gardenDemandStatuses, demandStatusLabels, demandStatusChipKeys } from './model/demandStatuses'

@@ -36,6 +36,7 @@ export function CatalogPage() {
   const [demands, setDemands] = useState([])
   const [totalPages, setTotalPages] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
   const [error, setError] = useState('')
 
   const [selectedDemandId, setSelectedDemandId] = useState(null)
@@ -78,13 +79,19 @@ export function CatalogPage() {
         if (!ignore) setError(err.message || 'Nepodařilo se načíst poptávky')
       })
       .finally(() => {
-        if (!ignore) setIsLoading(false)
+        if (!ignore) {
+          setIsLoading(false)
+          setHasLoadedOnce(true)
+        }
       })
 
     return () => {
       ignore = true
     }
   }, [filters, currentPage])
+
+  const showContent = hasLoadedOnce || !isLoading
+  const isRefreshing = isLoading && hasLoadedOnce
 
   const toggleFilter = (category, value) => {
     setFilters((prev) => {
@@ -176,28 +183,34 @@ export function CatalogPage() {
             )}
           </header>
 
-          {isLoading && <p>Načítání…</p>}
+          <div className="demand-list__body">
+            <div className={`demand-list__content${isRefreshing ? ' demand-list__content--loading' : ''}`}>
+              {!showContent && <p>Načítání…</p>}
 
-          {!isLoading && error && <p className="field__error">{error}</p>}
+              {showContent && error && <p className="field__error">{error}</p>}
 
-          {!isLoading && !error && demands.length === 0 && <p>Žádné poptávky nenalezeny</p>}
+              {showContent && !error && demands.length === 0 && <p>Žádné poptávky nenalezeny</p>}
 
-          {!isLoading && !error && demands.length > 0 && (
-            <ul className="demand-list__items">
-              {demands.map((demand) => (
-                <li className="demand-list__item" key={demand.id}>
-                  <DemandCard
-                    gardenName={demand.gardenName}
-                    descriptionPreview={demand.descriptionPreview}
-                    urgencyLabel={demand.urgencyLabel}
-                    onClick={() => handleCardClick(demand.id)}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
+              {showContent && !error && demands.length > 0 && (
+                <ul className="demand-list__items">
+                  {demands.map((demand) => (
+                    <li className="demand-list__item" key={demand.id}>
+                      <DemandCard
+                        gardenName={demand.gardenName}
+                        descriptionPreview={demand.descriptionPreview}
+                        urgencyLabel={demand.urgencyLabel}
+                        onClick={() => handleCardClick(demand.id)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
-          {!isLoading && !error && totalPages > 1 && (
+            {isRefreshing && <span className="demand-list__spinner" aria-hidden="true" />}
+          </div>
+
+          {showContent && !error && totalPages > 1 && (
             <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
           )}
         </div>

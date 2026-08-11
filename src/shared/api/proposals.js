@@ -38,3 +38,17 @@ export function rejectProposal(id) {
     method: 'POST',
   })
 }
+
+export function requestProposalChanges(id, data) {
+  return apiRequest(`/api/proposals/${id}/request-changes`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export function updateProposal(id, data) {
+  return apiRequest(`/api/proposals/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}

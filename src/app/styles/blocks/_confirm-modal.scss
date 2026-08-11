@@ -1,0 +1,56 @@
+.confirm-modal {
+  max-width: 420px;
+  width: calc(100% - var(--container-padding-x) * 2);
+
+  background-color: var(--color-light);
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--shadow-box-light);
+  border: none;
+  padding: 30px 32px 32px;
+
+  @include mobile {
+    padding: 18px;
+  }
+
+  &::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  &__title {
+    margin: 0;
+  }
+
+  &__close {
+    flex-shrink: 0;
+    border: none;
+    outline: none;
+  }
+
+  &__message {
+    color: var(--color-gray);
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+
+    @include mobile {
+      flex-direction: column-reverse;
+    }
+  }
+
+  &__actions .button {
+    flex: 1 1 0;
+  }
+}

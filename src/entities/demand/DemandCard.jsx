@@ -10,6 +10,7 @@ export function DemandCard({
   city,
   urgencyLabel,
   address,
+  price,
   status,
   onClick,
 }) {
@@ -32,6 +33,8 @@ export function DemandCard({
           )}
           <ArrowIcon className="demand-card__icon" />
         </div>
+
+        {price != null && <p className="card__price">{price} Kč</p>}
 
         {services.length > 0 && (
           <div className="demand-card__services">

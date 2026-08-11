@@ -22,11 +22,13 @@ import {
   getUrgencies,
 } from '../../../shared/api/demands'
 import { getServiceTypes } from '../../../shared/api/serviceTypes'
+import { useConfirm } from '../../../shared/ui/confirm'
 
 export function GardenEditPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const toast = useToast()
+  const confirm = useConfirm()
   const gardenId = Number(id)
 
   const [garden, setGarden] = useState(null)
@@ -38,6 +40,7 @@ export function GardenEditPage() {
 
   const [demands, setDemands] = useState([])
   const [demandsLoading, setDemandsLoading] = useState(true)
+  const [demandsLoadedOnce, setDemandsLoadedOnce] = useState(false)
   const [demandsError, setDemandsError] = useState('')
 
   const [serviceTypes, setServiceTypes] = useState([])
@@ -123,13 +126,19 @@ export function GardenEditPage() {
         if (!ignore) setDemandsError(err.message || 'Nepodařilo se načíst poptávky')
       })
       .finally(() => {
-        if (!ignore) setDemandsLoading(false)
+        if (!ignore) {
+          setDemandsLoading(false)
+          setDemandsLoadedOnce(true)
+        }
       })
 
     return () => {
       ignore = true
     }
   }, [gardenId, activeStatus, refreshKey])
+
+  const demandsShowContent = demandsLoadedOnce || !demandsLoading
+  const demandsRefreshing = demandsLoading && demandsLoadedOnce
 
   const editModalInitialValues = useMemo(() => {
     if (!editingDemand) return undefined
@@ -166,8 +175,14 @@ export function GardenEditPage() {
       setGarden((prev) => (prev ? { ...prev, mainPhotoUrl: null } : prev))
     })
 
-  const handleGardenDelete = () => {
-    if (!window.confirm('Opravdu chcete smazat tuto zahradu?')) return
+  const handleGardenDelete = async () => {
+    const ok = await confirm({
+      title: 'Smazat zahradu',
+      message: 'Opravdu chcete smazat tuto zahradu? Tato akce je nevratná.',
+      confirmLabel: 'Smazat',
+      variant: 'danger',
+    })
+    if (!ok) return
 
     deleteGarden(gardenId)
       .then(() => {
@@ -228,9 +243,15 @@ export function GardenEditPage() {
       })
   }
 
-  const handleDeleteDemand = () => {
+  const handleDeleteDemand = async () => {
     if (!editingDemandId) return
-    if (!window.confirm('Opravdu chcete smazat tuto poptávku?')) return
+    const ok = await confirm({
+      title: 'Smazat poptávku',
+      message: 'Opravdu chcete smazat tuto poptávku? Tato akce je nevratná.',
+      confirmLabel: 'Smazat',
+      variant: 'danger',
+    })
+    if (!ok) return
 
     setModalError('')
 
@@ -303,24 +324,32 @@ export function GardenEditPage() {
               </nav>
             </header>
 
-            {demandsLoading && <p>Načítání…</p>}
-            {!demandsLoading && demandsError && <p className="field__error">{demandsError}</p>}
-            {!demandsLoading && !demandsError && demands.length === 0 && <p>Žádné poptávky nenalezeny</p>}
+            <div className="demand-list__body">
+              <div className={`demand-list__content${demandsRefreshing ? ' demand-list__content--loading' : ''}`}>
+                {!demandsShowContent && <p>Načítání…</p>}
 
-            {!demandsLoading && !demandsError && demands.length > 0 && (
-              <ul className="demand-list__items">
-                {demands.map((demand) => (
-                  <li className="demand-list__item" key={demand.id}>
-                    <DemandCard
-                      gardenName={demand.gardenName}
-                      descriptionPreview={demand.descriptionPreview}
-                      urgencyLabel={demand.urgencyLabel}
-                      onClick={() => openEditModal(demand.id)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
+                {demandsShowContent && demandsError && <p className="field__error">{demandsError}</p>}
+
+                {demandsShowContent && !demandsError && demands.length === 0 && <p>Žádné poptávky nenalezeny</p>}
+
+                {demandsShowContent && !demandsError && demands.length > 0 && (
+                  <ul className="demand-list__items">
+                    {demands.map((demand) => (
+                      <li className="demand-list__item" key={demand.id}>
+                        <DemandCard
+                          gardenName={demand.gardenName}
+                          descriptionPreview={demand.descriptionPreview}
+                          urgencyLabel={demand.urgencyLabel}
+                          onClick={() => openEditModal(demand.id)}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {demandsRefreshing && <span className="demand-list__spinner" aria-hidden="true" />}
+            </div>
 
             <div className="demand-list__footer">
               <Button variant="green" onClick={openCreateModal}>
