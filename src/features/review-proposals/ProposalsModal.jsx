@@ -19,8 +19,6 @@ export const ProposalsModal = forwardRef(function ProposalsModal(
     onAccept,
     onReject,
     onRequestChanges,
-    onPay,
-    payLoading = false,
     onAcceptWork,
     acceptWorkError = '',
     acceptWorkFieldErrors = {},
@@ -199,12 +197,6 @@ export const ProposalsModal = forwardRef(function ProposalsModal(
       <h3 className="offer-modal__title h3">
         Návrhy na poptávku{demand?.gardenName ? `: ${demand.gardenName}` : ''}
       </h3>
-
-      {demand?.status === 'SCHVALENA' && (
-        <Button type="button" onClick={onPay} disabled={payLoading}>
-          {payLoading ? 'Zpracování…' : 'Zaplatit'}
-        </Button>
-      )}
 
       {demand?.workReport && (
         <div className="offer-modal__aside">

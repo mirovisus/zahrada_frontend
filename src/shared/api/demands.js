@@ -65,12 +65,6 @@ export function deleteDemand(id) {
   })
 }
 
-export function payDemand(id) {
-  return apiRequest(`/api/demands/${id}/pay`, {
-    method: 'POST',
-  })
-}
-
 export function acceptWork(id, data) {
   return apiRequest(`/api/demands/${id}/accept-work`, {
     method: 'POST',

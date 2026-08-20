@@ -14,7 +14,7 @@ import { Pagination } from '../../../shared/ui/pagination'
 import { CrossButton } from '../../../shared/ui/cross-button'
 import { useToast } from '../../../shared/ui/toast'
 import { getGardens } from '../../../shared/api/gardens'
-import { getMyDemands, getDemand, payDemand, acceptWork } from '../../../shared/api/demands'
+import { getMyDemands, getDemand, acceptWork } from '../../../shared/api/demands'
 import {
   getProposalsByDemand,
   getMyProposals,
@@ -393,7 +393,6 @@ export function ProfilePage() {
   const [proposals, setProposals] = useState([])
   const [proposalsLoading, setProposalsLoading] = useState(false)
   const [proposalsError, setProposalsError] = useState('')
-  const [payLoading, setPayLoading] = useState(false)
   const [acceptWorkError, setAcceptWorkError] = useState('')
   const [acceptWorkFieldErrors, setAcceptWorkFieldErrors] = useState({})
   const proposalsModalRef = useRef(null)
@@ -679,22 +678,6 @@ export function ProfilePage() {
       })
   }
 
-  const handlePay = () => {
-    if (!selectedDemand) return
-
-    setPayLoading(true)
-    payDemand(selectedDemand.id)
-      .then((updated) => {
-        setSelectedDemand((prev) => (prev ? { ...prev, status: updated.status } : prev))
-        setDemandsRefreshKey((key) => key + 1)
-        toast.success('Poptávka byla zaplacena')
-      })
-      .catch((error) => {
-        toast.error(error.message || 'Platbu se nepodařilo provést')
-      })
-      .finally(() => setPayLoading(false))
-  }
-
   const handleAcceptWork = (values) => {
     if (!selectedDemand) return Promise.resolve(false)
     setAcceptWorkError('')
@@ -915,8 +898,6 @@ export function ProfilePage() {
         onAccept={handleAccept}
         onReject={handleReject}
         onRequestChanges={handleRequestChanges}
-        onPay={handlePay}
-        payLoading={payLoading}
         onAcceptWork={handleAcceptWork}
         acceptWorkError={acceptWorkError}
         acceptWorkFieldErrors={acceptWorkFieldErrors}

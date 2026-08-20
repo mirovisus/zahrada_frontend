@@ -69,7 +69,7 @@ export const WorkReportModal = forwardRef(function WorkReportModal(
     event.currentTarget.closest('dialog')?.close()
   }
 
-  const canSubmitReport = job?.status === 'ZAPLACENA' && !job?.reportSubmitted
+  const canSubmitReport = job?.status === 'SCHVALENA' && !job?.reportSubmitted
 
   return (
     <dialog className="offer-modal" ref={ref} onClick={handleBackdropClick}>
@@ -126,8 +126,8 @@ export const WorkReportModal = forwardRef(function WorkReportModal(
               <p className="offer-modal__text">Report o dokončení prací byl odeslán.</p>
             )}
 
-            {!job.reportSubmitted && job.status !== 'ZAPLACENA' && (
-              <p className="offer-modal__text">Report bude možné odeslat po zaplacení zakázky.</p>
+            {!job.reportSubmitted && job.status !== 'SCHVALENA' && (
+              <p className="offer-modal__text">Report bude možné odeslat po přijetí návrhu.</p>
             )}
           </div>
         </div>
