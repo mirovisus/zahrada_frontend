@@ -14,7 +14,7 @@
 
 </div>
 
-![Veřejný katalog poptávek](docs/screenshots/00-hero.png)
+![Hero-section](docs/screenshots/00-hero.png)
 
 ## K čemu slouží
 
