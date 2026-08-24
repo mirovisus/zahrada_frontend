@@ -4,7 +4,7 @@
 
 **React frontend pro dvoustranný marketplace propojující majitele zahrad s nezávislými zahradníky.**
 
-[Živá ukázka](https://zahrada-demo.vercel.app) · [Backend](https://github.com/mirovisus/zahrada-backend)
+[Živá ukázka](https://zahrada-frontend.vercel.app) · [Backend](https://github.com/mirovisus/zahrada-backend)
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)
