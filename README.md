@@ -99,3 +99,24 @@ npm run lint     # ESLint
 ## Environment variable
 
 The backend address is read from `VITE_API_URL` in the `.env` file at the project root (`.env` is gitignored, copy from `.env.example`).
+
+VITE_API_URL=http://localhost:8080
+
+
+If the backend runs elsewhere, update the value and restart `npm run dev` (Vite loads environment variables only on startup).
+
+## Project structure
+
+src/
+├── app/ Providers, routing, global styles
+├── pages/ Route-level components
+├── widgets/ Composite UI blocks
+├── features/ Interactive features (login, submit bid, etc.)
+├── entities/ Domain models and their UI (request, bid, garden, etc.)
+├── shared/ API clients, utilities, primitives
+└── mocks/ MSW handlers for the demo build
+
+
+## About the project
+
+Built as a semester project for KIT/BRPW2 (Ročníkový projekt II) at the Faculty of Electrical Engineering and Informatics, University of Pardubice, supervised by Ing. Lukáš Čegan, Ph.D.
