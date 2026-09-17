@@ -107,14 +107,13 @@ If the backend runs elsewhere, update the value and restart `npm run dev` (Vite 
 
 ## Project structure
 
-src/
-├── app/ Providers, routing, global styles
-├── pages/ Route-level components
-├── widgets/ Composite UI blocks
-├── features/ Interactive features (login, submit bid, etc.)
-├── entities/ Domain models and their UI (request, bid, garden, etc.)
-├── shared/ API clients, utilities, primitives
-└── mocks/ MSW handlers for the demo build
+- `src/app/` - providers, routing, global styles
+- `src/pages/` - route-level components
+- `src/widgets/` - composite UI blocks
+- `src/features/` - interactive features (login, submit bid, etc.)
+- `src/entities/` - domain models and their UI (request, bid, garden, etc.)
+- `src/shared/` - API clients, utilities, primitives
+- `src/mocks/` - MSW handlers for the demo build
 
 
 ## About the project
