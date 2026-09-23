@@ -398,11 +398,17 @@ export const handlers = [
     if (error) return error;
     const idx = db.gardens.findIndex((g) => g.id === Number(params.id) && g.ownerId === user.id);
     if (idx === -1) return apiError(404, 'Zahrada nenalezena', request);
-    db.gardens.splice(idx, 1);
+    const [removed] = db.gardens.splice(idx, 1);
+    if (removed.mainPhotoUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(removed.mainPhotoUrl);
+    }
     return new HttpResponse(null, { status: 204 });
   }),
 
   // Nahrání/smazání fotky - skutečné endpointy vrací celý GardenDetailResponse.
+  // mainPhotoUrl se ukládá jako blob: URL (URL.createObjectURL) místo fingované cesty - ta by
+  // vedla na neexistující soubor a v prohlížeči skončila jako 404/broken image. Blob URL žije
+  // jen po dobu dokumentu, což odpovídá resetu MSW úložiště při reloadu stránky.
   http.post('*/api/gardens/:id/photo', async ({ params, request }) => {
     await delay(NETWORK_DELAY);
     const { user, error } = requireAuth(request);
@@ -411,8 +417,13 @@ export const handlers = [
     if (!garden || garden.ownerId !== user.id) {
       return apiError(404, 'Zahrada nenalezena', request);
     }
-    // TODO: pokud frontend vykresluje URL, poskytnout cestu k ukázkovému obrázku
-    garden.mainPhotoUrl = `/mock-uploads/garden-${garden.id}-${Date.now()}.jpg`;
+    const formData = await request.formData();
+    const file = formData.get('file');
+    const blobUrl = URL.createObjectURL(file);
+    if (garden.mainPhotoUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(garden.mainPhotoUrl);
+    }
+    garden.mainPhotoUrl = blobUrl;
     return HttpResponse.json(toGardenDto(garden));
   }),
 
@@ -423,6 +434,9 @@ export const handlers = [
     const garden = findGardenById(Number(params.id));
     if (!garden || garden.ownerId !== user.id) {
       return apiError(404, 'Zahrada nenalezena', request);
+    }
+    if (garden.mainPhotoUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(garden.mainPhotoUrl);
     }
     garden.mainPhotoUrl = null;
     return HttpResponse.json(toGardenDto(garden));
