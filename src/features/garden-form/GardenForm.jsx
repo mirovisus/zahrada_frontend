@@ -64,7 +64,7 @@ function UploadIcon() {
   )
 }
 
-export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete, onUploadPhoto, onDeletePhoto }) {
+export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete, onUploadPhoto, onDeletePhoto, onPhotoChange }) {
   const isEdit = mode === 'edit'
   const toast = useToast()
   const confirm = useConfirm()
@@ -110,6 +110,7 @@ export function GardenForm({ mode = 'create', initialValues, onSubmit, onDelete,
 
     setPhotoFile(file)
     setPhotoPreview(URL.createObjectURL(file))
+    onPhotoChange?.(file)
   }
 
   const handleUploadPhoto = async () => {
